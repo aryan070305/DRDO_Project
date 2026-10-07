@@ -1,0 +1,1035 @@
+{
+ "verdict": "PASS",
+ "counts": {
+  "PASS": 83,
+  "FAIL": 0,
+  "WARN": 1,
+  "INFO": 7,
+  "SKIP": 0
+ },
+ "root": "/Users/nsivaprasadnandyala/Desktop/DRDO_Project",
+ "host": "macOS-26.2-arm64-arm-64bit",
+ "python": "3.11.15",
+ "tolerances": {
+  "pesq_wb": 0.05,
+  "pesq_nb": 0.05,
+  "stoi": 0.01,
+  "snr": 0.25
+ },
+ "reference_systems": {
+  "HQ": {
+   "dualmic_v1": "hybrid:hqft",
+   "defence_v1": "dancnet:hq_metric"
+  },
+  "LL": {
+   "dualmic_v1": "hybrid:ll",
+   "defence_v1": "dancnet:ll"
+  }
+ },
+ "selected_ids": {
+  "dualmic_v1": [
+   "0000_stationary_m05",
+   "0045_stationary_p10",
+   "0060_nonstationary_m05",
+   "0105_nonstationary_p10",
+   "0120_impulsive_m05",
+   "0165_impulsive_p10",
+   "0180_mixed_m05",
+   "0225_mixed_p10"
+  ],
+  "defence_v1": [
+   "0000_stationary_m05",
+   "0160_stationary_p15",
+   "0200_nonstationary_m05",
+   "0360_nonstationary_p15",
+   "0400_impulsive_m05",
+   "0560_impulsive_p15",
+   "0600_mixed_m05",
+   "0760_mixed_p15"
+  ]
+ },
+ "checks": [
+  {
+   "group": "env",
+   "name": "python >= 3.10",
+   "status": "PASS",
+   "detail": "3.11.15"
+  },
+  {
+   "group": "env",
+   "name": "runtime packages importable",
+   "status": "PASS",
+   "detail": "numpy 2.4.6, scipy 1.17.1, soundfile 0.14.0, soxr 1.1.0, onnxruntime 1.30.0, pesq ?, pystoi 0.4.1"
+  },
+  {
+   "group": "env",
+   "name": "sounddevice / PortAudio",
+   "status": "PASS",
+   "detail": "sounddevice 0.5.6, PortAudio V19.7.0-devel, revision unknown"
+  },
+  {
+   "group": "env",
+   "name": "onnxruntime providers",
+   "status": "INFO",
+   "detail": "CoreMLExecutionProvider, AzureExecutionProvider, CPUExecutionProvider"
+  },
+  {
+   "group": "env",
+   "name": "online CPUs",
+   "status": "INFO",
+   "detail": "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]"
+  },
+  {
+   "group": "env",
+   "name": "host",
+   "status": "INFO",
+   "detail": "macOS-26.2-arm64-arm-64bit (arm64)"
+  },
+  {
+   "group": "files",
+   "name": "test audio present (16 scenes + meta)",
+   "status": "PASS",
+   "detail": "42 files"
+  },
+  {
+   "group": "files",
+   "name": "reference per_file.csv present",
+   "status": "PASS",
+   "detail": "dualmic_v1, defence_v1"
+  },
+  {
+   "group": "torch-free",
+   "name": "engine modules import without torch",
+   "status": "PASS",
+   "detail": "danc from /Users/nsivaprasadnandyala/Desktop/DRDO_Project/src/danc; torch blocked"
+  },
+  {
+   "group": "torch-free",
+   "name": "danc.inference.runners needs torch",
+   "status": "INFO",
+   "detail": "expected: deploy/jetson/danc_live.py registers a torch-free runner instead"
+  },
+  {
+   "group": "torch-free",
+   "name": "live app (danc.inference.realtime) imports via danc_live.py shim",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "group": "contract",
+   "name": "HQ sha256 matches DEPLOYMENT.json",
+   "status": "PASS",
+   "detail": "13432dee2ca9fbe8... expected 13432dee2ca9fbe8..."
+  },
+  {
+   "group": "contract",
+   "name": "HQ input names/order",
+   "status": "PASS",
+   "detail": "['spec', 'state_in_0', 'state_in_1', 'state_in_2', 'state_in_3', 'state_in_4', 'state_in_5', 'state_in_6', 'state_in_7']"
+  },
+  {
+   "group": "contract",
+   "name": "HQ input shapes",
+   "status": "PASS",
+   "detail": "all static, as in DEPLOYMENT.json"
+  },
+  {
+   "group": "contract",
+   "name": "HQ input dtypes float32",
+   "status": "PASS",
+   "detail": "['tensor(float)']"
+  },
+  {
+   "group": "contract",
+   "name": "HQ output names/order",
+   "status": "PASS",
+   "detail": "['spec_out', 'spp', 'state_out_0', 'state_out_1', 'state_out_2', 'state_out_3', 'state_out_4', 'state_out_5', 'state_out_6', 'state_out_7']"
+  },
+  {
+   "group": "contract",
+   "name": "HQ number of recurrent states",
+   "status": "PASS",
+   "detail": "8 in / 8 out (expected 8, 50.3 KB)"
+  },
+  {
+   "group": "contract",
+   "name": "HQ metadata == DEPLOYMENT.json",
+   "status": "PASS",
+   "detail": "all keys equal"
+  },
+  {
+   "group": "contract",
+   "name": "HQ STFT metadata (16 kHz, 20 ms win, 10 ms hop)",
+   "status": "PASS",
+   "detail": "fs=16000 win=320 hop=160 n_fft=320"
+  },
+  {
+   "group": "contract",
+   "name": "HQ look-ahead metadata consistent",
+   "status": "PASS",
+   "detail": "lookahead=2 frames -> 40 ms algorithmic (expected 40)"
+  },
+  {
+   "group": "contract",
+   "name": "HQ zero-input step (shapes, finite, spp in [0,1])",
+   "status": "PASS",
+   "detail": "spec_out [1, 1, 161, 2], spp [1, 1, 161]"
+  },
+  {
+   "group": "contract",
+   "name": "HQ runner parity (danc_jetson_rt vs trt_runner adapter)",
+   "status": "PASS",
+   "detail": "max |diff| 0.0e+00"
+  },
+  {
+   "group": "runner",
+   "name": "HQ/ORT",
+   "status": "INFO",
+   "detail": "providers ['CPUExecutionProvider'], look-ahead 2 frames"
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT dualmic_v1/0000_stationary_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.631 (ref 1.631)  PESQ-NB 2.462 (ref 2.462)  STOI 0.817 (ref 0.817)  SNR 8.74 dB (ref 8.74)",
+   "metrics": {
+    "pesq_wb": 1.631192684173584,
+    "pesq_nb": 2.4620132446289062,
+    "stoi": 0.8169799741436485,
+    "estoi": 0.6280016012377065,
+    "snr": 8.73698504776678
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT dualmic_v1/0045_stationary_p10",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.370 (ref 2.370)  PESQ-NB 2.916 (ref 2.916)  STOI 0.955 (ref 0.955)  SNR 13.98 dB (ref 13.98)",
+   "metrics": {
+    "pesq_wb": 2.3701088428497314,
+    "pesq_nb": 2.9160406589508057,
+    "stoi": 0.9552418944442664,
+    "estoi": 0.8594624342033781,
+    "snr": 13.979414380713422
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT dualmic_v1/0060_nonstationary_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.323 (ref 1.323)  PESQ-NB 1.798 (ref 1.798)  STOI 0.861 (ref 0.861)  SNR 5.89 dB (ref 5.89)",
+   "metrics": {
+    "pesq_wb": 1.3234437704086304,
+    "pesq_nb": 1.7982356548309326,
+    "stoi": 0.8612863060865131,
+    "estoi": 0.6913734183142911,
+    "snr": 5.892739602616222
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT dualmic_v1/0105_nonstationary_p10",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.876 (ref 2.876)  PESQ-NB 3.393 (ref 3.393)  STOI 0.953 (ref 0.953)  SNR 11.04 dB (ref 11.04)",
+   "metrics": {
+    "pesq_wb": 2.8764822483062744,
+    "pesq_nb": 3.3931171894073486,
+    "stoi": 0.9533415554045453,
+    "estoi": 0.8896041761038181,
+    "snr": 11.040605905179214
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT dualmic_v1/0120_impulsive_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.078 (ref 2.078)  PESQ-NB 2.658 (ref 2.658)  STOI 0.949 (ref 0.949)  SNR 11.70 dB (ref 11.70)",
+   "metrics": {
+    "pesq_wb": 2.078094005584717,
+    "pesq_nb": 2.658175468444824,
+    "stoi": 0.9487543435549317,
+    "estoi": 0.8628585808513378,
+    "snr": 11.703522278980063
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT dualmic_v1/0165_impulsive_p10",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.727 (ref 2.727)  PESQ-NB 3.572 (ref 3.572)  STOI 0.984 (ref 0.984)  SNR 15.94 dB (ref 15.94)",
+   "metrics": {
+    "pesq_wb": 2.7265641689300537,
+    "pesq_nb": 3.571645498275757,
+    "stoi": 0.983707476625721,
+    "estoi": 0.9641817166435513,
+    "snr": 15.937732871493859
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT dualmic_v1/0180_mixed_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.742 (ref 1.742)  PESQ-NB 2.159 (ref 2.159)  STOI 0.875 (ref 0.875)  SNR 9.08 dB (ref 9.08)",
+   "metrics": {
+    "pesq_wb": 1.7422444820404053,
+    "pesq_nb": 2.158966064453125,
+    "stoi": 0.8754424517998893,
+    "estoi": 0.814200135318418,
+    "snr": 9.083893659332471
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT dualmic_v1/0225_mixed_p10",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.860 (ref 2.860)  PESQ-NB 3.632 (ref 3.632)  STOI 0.974 (ref 0.974)  SNR 17.40 dB (ref 17.40)",
+   "metrics": {
+    "pesq_wb": 2.8596770763397217,
+    "pesq_nb": 3.631552219390869,
+    "stoi": 0.9735419787404981,
+    "estoi": 0.923685863618882,
+    "snr": 17.399663147433973
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT dualmic_v1 mean of 8 files",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.201/2.201  PESQ-NB 2.824/2.824  STOI 0.921/0.921  SNR 11.72/11.72 dB (got/ref); max |d|: PESQ-WB 0.0000 PESQ-NB 0.0000 STOI 0.00000 SNR 0.000; 13.9 s",
+   "means": {
+    "pesq_wb": 2.2009759098291397,
+    "pesq_nb": 2.823718249797821,
+    "stoi": 0.9210369976000017,
+    "snr": 11.7218196116895
+   },
+   "ref_means": {
+    "pesq_wb": 2.2009759098291397,
+    "pesq_nb": 2.823718249797821,
+    "stoi": 0.9210369976000017,
+    "snr": 11.7218196116895
+   },
+   "max_abs_delta": {
+    "pesq_wb": 4.440892098500626e-16,
+    "pesq_nb": 0.0,
+    "stoi": 1.1102230246251565e-16,
+    "snr": 1.7763568394002505e-15
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT defence_v1/0000_stationary_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.423 (ref 1.423)  PESQ-NB 1.958 (ref 1.958)  STOI 0.821 (ref 0.821)  SNR 6.03 dB (ref 6.03)",
+   "metrics": {
+    "pesq_wb": 1.4225488901138306,
+    "pesq_nb": 1.9576003551483154,
+    "stoi": 0.8207522889143508,
+    "estoi": 0.6037631284330103,
+    "snr": 6.030395821917565
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT defence_v1/0160_stationary_p15",
+   "status": "PASS",
+   "detail": "PESQ-WB 3.573 (ref 3.573)  PESQ-NB 4.000 (ref 4.000)  STOI 0.983 (ref 0.983)  SNR 20.28 dB (ref 20.28)",
+   "metrics": {
+    "pesq_wb": 3.5728838443756104,
+    "pesq_nb": 4.000089645385742,
+    "stoi": 0.9829009703507794,
+    "estoi": 0.9515760094198819,
+    "snr": 20.282175475620193
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT defence_v1/0200_nonstationary_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.401 (ref 1.401)  PESQ-NB 2.020 (ref 2.020)  STOI 0.831 (ref 0.831)  SNR 7.46 dB (ref 7.46)",
+   "metrics": {
+    "pesq_wb": 1.4013926982879639,
+    "pesq_nb": 2.0196194648742676,
+    "stoi": 0.8309415875969256,
+    "estoi": 0.6372102020963734,
+    "snr": 7.455452081887115
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT defence_v1/0360_nonstationary_p15",
+   "status": "PASS",
+   "detail": "PESQ-WB 3.041 (ref 3.041)  PESQ-NB 3.577 (ref 3.577)  STOI 0.989 (ref 0.989)  SNR 19.34 dB (ref 19.34)",
+   "metrics": {
+    "pesq_wb": 3.0410518646240234,
+    "pesq_nb": 3.5766897201538086,
+    "stoi": 0.989243612460886,
+    "estoi": 0.9644380787012097,
+    "snr": 19.34350310935978
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT defence_v1/0400_impulsive_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.232 (ref 2.232)  PESQ-NB 2.921 (ref 2.921)  STOI 0.916 (ref 0.916)  SNR 10.40 dB (ref 10.40)",
+   "metrics": {
+    "pesq_wb": 2.2315475940704346,
+    "pesq_nb": 2.921140193939209,
+    "stoi": 0.9155530406086021,
+    "estoi": 0.8922202601112236,
+    "snr": 10.397466232559937
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT defence_v1/0560_impulsive_p15",
+   "status": "PASS",
+   "detail": "PESQ-WB 3.266 (ref 3.266)  PESQ-NB 3.716 (ref 3.716)  STOI 0.970 (ref 0.970)  SNR 22.00 dB (ref 22.00)",
+   "metrics": {
+    "pesq_wb": 3.2658603191375732,
+    "pesq_nb": 3.7164390087127686,
+    "stoi": 0.9695389441000339,
+    "estoi": 0.9189072868536556,
+    "snr": 22.004087701116358
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT defence_v1/0600_mixed_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.139 (ref 1.139)  PESQ-NB 1.621 (ref 1.621)  STOI 0.720 (ref 0.720)  SNR 4.81 dB (ref 4.81)",
+   "metrics": {
+    "pesq_wb": 1.1394975185394287,
+    "pesq_nb": 1.6212246417999268,
+    "stoi": 0.7195273681266134,
+    "estoi": 0.508440492724196,
+    "snr": 4.812975316525571
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT defence_v1/0760_mixed_p15",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.767 (ref 2.767)  PESQ-NB 3.474 (ref 3.474)  STOI 0.984 (ref 0.984)  SNR 17.14 dB (ref 17.14)",
+   "metrics": {
+    "pesq_wb": 2.766998529434204,
+    "pesq_nb": 3.4739441871643066,
+    "stoi": 0.9838351491287238,
+    "estoi": 0.9591943263632805,
+    "snr": 17.138944112402537
+   }
+  },
+  {
+   "group": "quality",
+   "name": "HQ/ORT defence_v1 mean of 8 files",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.355/2.355  PESQ-NB 2.911/2.911  STOI 0.902/0.902  SNR 13.43/13.43 dB (got/ref); max |d|: PESQ-WB 0.0000 PESQ-NB 0.0000 STOI 0.00000 SNR 0.000; 11.4 s",
+   "means": {
+    "pesq_wb": 2.3552226573228836,
+    "pesq_nb": 2.910843402147293,
+    "stoi": 0.9015366201608643,
+    "snr": 13.433124981423632
+   },
+   "ref_means": {
+    "pesq_wb": 2.355223134160042,
+    "pesq_nb": 2.910843104124069,
+    "stoi": 0.9015366118114712,
+    "snr": 13.433125593196769
+   },
+   "max_abs_delta": {
+    "pesq_wb": 2.4080276489257812e-05,
+    "pesq_nb": 1.1920928955078125e-06,
+    "stoi": 2.7417891623748858e-08,
+    "snr": 2.427511248015435e-06
+   }
+  },
+  {
+   "group": "robust",
+   "name": "HQ digital silence in -> silence out",
+   "status": "PASS",
+   "detail": "max |y| = 0.00e+00"
+  },
+  {
+   "group": "robust",
+   "name": "HQ full-scale clipped input, limiter -1 dBFS",
+   "status": "PASS",
+   "detail": "peak -1.00 dBFS"
+  },
+  {
+   "group": "robust",
+   "name": "HQ reference mic absent / dead -> DNN-only",
+   "status": "PASS",
+   "detail": "outputs identical: True"
+  },
+  {
+   "group": "robust",
+   "name": "HQ NaN/Inf burst (hybrid), safety wrapper",
+   "status": "PASS",
+   "detail": "output finite throughout; tail RMS -25.7 dBFS"
+  },
+  {
+   "group": "robust",
+   "name": "HQ NaN/Inf burst (DNN-only), safety wrapper",
+   "status": "PASS",
+   "detail": "output finite throughout; tail RMS -25.4 dBFS"
+  },
+  {
+   "group": "robust",
+   "name": "HQ plain engine recovers after NaN/Inf burst",
+   "status": "PASS",
+   "detail": "18 non-finite output blocks (the live launcher's safety wrapper zeroes them)"
+  },
+  {
+   "group": "robust",
+   "name": "HQ reset() determinism",
+   "status": "PASS",
+   "detail": "max |diff| = 0.0e+00"
+  },
+  {
+   "group": "robust",
+   "name": "HQ long-run: bounded timing history (1 h of blocks)",
+   "status": "PASS",
+   "detail": "1500 entries kept, timing_stats() 0.85 ms (plain engine after 1 h: ~25 ms on an M4)"
+  },
+  {
+   "group": "timing",
+   "name": "real-time settings",
+   "status": "INFO",
+   "detail": "cpus=None sched=OTHER"
+  },
+  {
+   "group": "timing",
+   "name": "HQ/ORT 3000 hops, p99 < 10 ms deadline",
+   "status": "PASS",
+   "detail": "mean 2.270  p50 2.220  p99 3.679  p99.9 5.007  max 5.998 ms; hops > 10 ms: 0/3000; RTF 0.227",
+   "timing": {
+    "hops": 3000,
+    "mean_ms": 2.2696580063396445,
+    "p50_ms": 2.2195830024429597,
+    "p99_ms": 3.6789212474832214,
+    "p99_9_ms": 5.006681540166099,
+    "max_ms": 5.998291002470069,
+    "misses_gt_10ms": 0,
+    "rtf": 0.22696580063396446,
+    "strict": false
+   }
+  },
+  {
+   "group": "timing",
+   "name": "HQ/ORT p99.9 above the 5 ms acceptance target",
+   "status": "WARN",
+   "detail": "p99.9 5.01 ms"
+  },
+  {
+   "group": "contract",
+   "name": "LL sha256 matches DEPLOYMENT.json",
+   "status": "PASS",
+   "detail": "215c65edd954850b... expected 215c65edd954850b..."
+  },
+  {
+   "group": "contract",
+   "name": "LL input names/order",
+   "status": "PASS",
+   "detail": "['spec', 'state_in_0', 'state_in_1', 'state_in_2', 'state_in_3', 'state_in_4', 'state_in_5', 'state_in_6', 'state_in_7']"
+  },
+  {
+   "group": "contract",
+   "name": "LL input shapes",
+   "status": "PASS",
+   "detail": "all static, as in DEPLOYMENT.json"
+  },
+  {
+   "group": "contract",
+   "name": "LL input dtypes float32",
+   "status": "PASS",
+   "detail": "['tensor(float)']"
+  },
+  {
+   "group": "contract",
+   "name": "LL output names/order",
+   "status": "PASS",
+   "detail": "['spec_out', 'spp', 'state_out_0', 'state_out_1', 'state_out_2', 'state_out_3', 'state_out_4', 'state_out_5', 'state_out_6', 'state_out_7']"
+  },
+  {
+   "group": "contract",
+   "name": "LL number of recurrent states",
+   "status": "PASS",
+   "detail": "8 in / 8 out (expected 8, 47.2 KB)"
+  },
+  {
+   "group": "contract",
+   "name": "LL metadata == DEPLOYMENT.json",
+   "status": "PASS",
+   "detail": "all keys equal"
+  },
+  {
+   "group": "contract",
+   "name": "LL STFT metadata (16 kHz, 20 ms win, 10 ms hop)",
+   "status": "PASS",
+   "detail": "fs=16000 win=320 hop=160 n_fft=320"
+  },
+  {
+   "group": "contract",
+   "name": "LL look-ahead metadata consistent",
+   "status": "PASS",
+   "detail": "lookahead=0 frames -> 20 ms algorithmic (expected 20)"
+  },
+  {
+   "group": "contract",
+   "name": "LL zero-input step (shapes, finite, spp in [0,1])",
+   "status": "PASS",
+   "detail": "spec_out [1, 1, 161, 2], spp [1, 1, 161]"
+  },
+  {
+   "group": "contract",
+   "name": "LL runner parity (danc_jetson_rt vs trt_runner adapter)",
+   "status": "PASS",
+   "detail": "max |diff| 0.0e+00"
+  },
+  {
+   "group": "runner",
+   "name": "LL/ORT",
+   "status": "INFO",
+   "detail": "providers ['CPUExecutionProvider'], look-ahead 0 frames"
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT dualmic_v1/0000_stationary_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.587 (ref 1.587)  PESQ-NB 2.314 (ref 2.314)  STOI 0.819 (ref 0.819)  SNR 8.37 dB (ref 8.37)",
+   "metrics": {
+    "pesq_wb": 1.5868785381317139,
+    "pesq_nb": 2.3135695457458496,
+    "stoi": 0.8191846986371686,
+    "estoi": 0.6271460630396665,
+    "snr": 8.36524137370131
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT dualmic_v1/0045_stationary_p10",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.401 (ref 2.401)  PESQ-NB 2.986 (ref 2.986)  STOI 0.951 (ref 0.951)  SNR 14.92 dB (ref 14.92)",
+   "metrics": {
+    "pesq_wb": 2.40106463432312,
+    "pesq_nb": 2.9864094257354736,
+    "stoi": 0.9514354811782294,
+    "estoi": 0.8608635270604881,
+    "snr": 14.922408489704935
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT dualmic_v1/0060_nonstationary_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.452 (ref 1.452)  PESQ-NB 1.941 (ref 1.941)  STOI 0.864 (ref 0.864)  SNR 8.71 dB (ref 8.71)",
+   "metrics": {
+    "pesq_wb": 1.452280044555664,
+    "pesq_nb": 1.9406404495239258,
+    "stoi": 0.8644028949020686,
+    "estoi": 0.7053272785205859,
+    "snr": 8.714293080517
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT dualmic_v1/0105_nonstationary_p10",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.901 (ref 2.901)  PESQ-NB 3.371 (ref 3.371)  STOI 0.954 (ref 0.954)  SNR 12.07 dB (ref 12.07)",
+   "metrics": {
+    "pesq_wb": 2.900871753692627,
+    "pesq_nb": 3.370769500732422,
+    "stoi": 0.9539095583364215,
+    "estoi": 0.8936146803539281,
+    "snr": 12.071972824767489
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT dualmic_v1/0120_impulsive_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.698 (ref 1.698)  PESQ-NB 2.137 (ref 2.137)  STOI 0.930 (ref 0.930)  SNR 11.01 dB (ref 11.01)",
+   "metrics": {
+    "pesq_wb": 1.6977238655090332,
+    "pesq_nb": 2.1370177268981934,
+    "stoi": 0.9299560428010332,
+    "estoi": 0.85161135847763,
+    "snr": 11.010579539583059
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT dualmic_v1/0165_impulsive_p10",
+   "status": "PASS",
+   "detail": "PESQ-WB 3.243 (ref 3.243)  PESQ-NB 3.718 (ref 3.718)  STOI 0.983 (ref 0.983)  SNR 16.81 dB (ref 16.81)",
+   "metrics": {
+    "pesq_wb": 3.243328332901001,
+    "pesq_nb": 3.717590570449829,
+    "stoi": 0.9826949685935017,
+    "estoi": 0.9636070560148948,
+    "snr": 16.811339109048888
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT dualmic_v1/0180_mixed_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.487 (ref 1.487)  PESQ-NB 1.777 (ref 1.777)  STOI 0.860 (ref 0.860)  SNR 6.16 dB (ref 6.16)",
+   "metrics": {
+    "pesq_wb": 1.487424373626709,
+    "pesq_nb": 1.7765378952026367,
+    "stoi": 0.8596104586388008,
+    "estoi": 0.7832380013253205,
+    "snr": 6.156932080989941
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT dualmic_v1/0225_mixed_p10",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.785 (ref 2.785)  PESQ-NB 3.646 (ref 3.646)  STOI 0.970 (ref 0.970)  SNR 18.34 dB (ref 18.34)",
+   "metrics": {
+    "pesq_wb": 2.784907579421997,
+    "pesq_nb": 3.6463112831115723,
+    "stoi": 0.9702451547994603,
+    "estoi": 0.9168431211098153,
+    "snr": 18.342721212233265
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT dualmic_v1 mean of 8 files",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.194/2.194  PESQ-NB 2.736/2.736  STOI 0.916/0.916  SNR 12.05/12.05 dB (got/ref); max |d|: PESQ-WB 0.0000 PESQ-NB 0.0000 STOI 0.00000 SNR 0.000; 12.9 s",
+   "means": {
+    "pesq_wb": 2.194309890270233,
+    "pesq_nb": 2.736105799674988,
+    "stoi": 0.9164299072358355,
+    "snr": 12.049435963818237
+   },
+   "ref_means": {
+    "pesq_wb": 2.194309890270233,
+    "pesq_nb": 2.736105799674988,
+    "stoi": 0.9164299072358355,
+    "snr": 12.049435963818237
+   },
+   "max_abs_delta": {
+    "pesq_wb": 0.0,
+    "pesq_nb": 0.0,
+    "stoi": 0.0,
+    "snr": 0.0
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT defence_v1/0000_stationary_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.298 (ref 1.298)  PESQ-NB 1.768 (ref 1.768)  STOI 0.776 (ref 0.776)  SNR 5.38 dB (ref 5.38)",
+   "metrics": {
+    "pesq_wb": 1.2976737022399902,
+    "pesq_nb": 1.7680087089538574,
+    "stoi": 0.77558953583369,
+    "estoi": 0.5721594269740438,
+    "snr": 5.381121055676475
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT defence_v1/0160_stationary_p15",
+   "status": "PASS",
+   "detail": "PESQ-WB 3.516 (ref 3.516)  PESQ-NB 3.933 (ref 3.933)  STOI 0.981 (ref 0.981)  SNR 19.84 dB (ref 19.84)",
+   "metrics": {
+    "pesq_wb": 3.5161995887756348,
+    "pesq_nb": 3.933279514312744,
+    "stoi": 0.9808265658284073,
+    "estoi": 0.9487547745818287,
+    "snr": 19.836081444486585
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT defence_v1/0200_nonstationary_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.294 (ref 1.294)  PESQ-NB 2.022 (ref 2.022)  STOI 0.822 (ref 0.822)  SNR 7.00 dB (ref 7.00)",
+   "metrics": {
+    "pesq_wb": 1.2936904430389404,
+    "pesq_nb": 2.0215790271759033,
+    "stoi": 0.8219533904216164,
+    "estoi": 0.6214230145188568,
+    "snr": 7.000188000254305
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT defence_v1/0360_nonstationary_p15",
+   "status": "PASS",
+   "detail": "PESQ-WB 3.004 (ref 3.004)  PESQ-NB 3.509 (ref 3.509)  STOI 0.988 (ref 0.988)  SNR 18.28 dB (ref 18.28)",
+   "metrics": {
+    "pesq_wb": 3.0037224292755127,
+    "pesq_nb": 3.509483575820923,
+    "stoi": 0.9883099861523605,
+    "estoi": 0.9638694728095336,
+    "snr": 18.2799134748223
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT defence_v1/0400_impulsive_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.220 (ref 2.220)  PESQ-NB 3.088 (ref 3.088)  STOI 0.916 (ref 0.916)  SNR 10.49 dB (ref 10.49)",
+   "metrics": {
+    "pesq_wb": 2.2196226119995117,
+    "pesq_nb": 3.088467836380005,
+    "stoi": 0.9157921536135251,
+    "estoi": 0.9009771922067278,
+    "snr": 10.488115721509654
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT defence_v1/0560_impulsive_p15",
+   "status": "PASS",
+   "detail": "PESQ-WB 3.371 (ref 3.371)  PESQ-NB 3.760 (ref 3.760)  STOI 0.971 (ref 0.971)  SNR 20.60 dB (ref 20.60)",
+   "metrics": {
+    "pesq_wb": 3.37084698677063,
+    "pesq_nb": 3.7596890926361084,
+    "stoi": 0.9709242506631461,
+    "estoi": 0.9195131967903121,
+    "snr": 20.60218349351095
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT defence_v1/0600_mixed_m05",
+   "status": "PASS",
+   "detail": "PESQ-WB 1.112 (ref 1.112)  PESQ-NB 1.422 (ref 1.422)  STOI 0.673 (ref 0.673)  SNR 4.25 dB (ref 4.25)",
+   "metrics": {
+    "pesq_wb": 1.1121865510940552,
+    "pesq_nb": 1.422206997871399,
+    "stoi": 0.6734179122303158,
+    "estoi": 0.4518610809228133,
+    "snr": 4.246830891301464
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT defence_v1/0760_mixed_p15",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.278 (ref 2.278)  PESQ-NB 3.241 (ref 3.241)  STOI 0.980 (ref 0.980)  SNR 15.45 dB (ref 15.45)",
+   "metrics": {
+    "pesq_wb": 2.278247594833374,
+    "pesq_nb": 3.241339921951294,
+    "stoi": 0.9795552864016579,
+    "estoi": 0.946819762162759,
+    "snr": 15.448445149257413
+   }
+  },
+  {
+   "group": "quality",
+   "name": "LL/ORT defence_v1 mean of 8 files",
+   "status": "PASS",
+   "detail": "PESQ-WB 2.262/2.262  PESQ-NB 2.843/2.843  STOI 0.888/0.888  SNR 12.66/12.66 dB (got/ref); max |d|: PESQ-WB 0.0000 PESQ-NB 0.0000 STOI 0.00000 SNR 0.000; 11.1 s",
+   "means": {
+    "pesq_wb": 2.261523738503456,
+    "pesq_nb": 2.8430068343877792,
+    "stoi": 0.8882961351430898,
+    "snr": 12.660359903852394
+   },
+   "ref_means": {
+    "pesq_wb": 2.2615232169628143,
+    "pesq_nb": 2.8430069983005524,
+    "stoi": 0.8882961279217425,
+    "snr": 12.660358844048083
+   },
+   "max_abs_delta": {
+    "pesq_wb": 5.7220458984375e-06,
+    "pesq_nb": 7.152557373046875e-07,
+    "stoi": 3.414062121898098e-08,
+    "snr": 3.819375720581775e-06
+   }
+  },
+  {
+   "group": "robust",
+   "name": "LL digital silence in -> silence out",
+   "status": "PASS",
+   "detail": "max |y| = 0.00e+00"
+  },
+  {
+   "group": "robust",
+   "name": "LL full-scale clipped input, limiter -1 dBFS",
+   "status": "PASS",
+   "detail": "peak -1.00 dBFS"
+  },
+  {
+   "group": "robust",
+   "name": "LL reference mic absent / dead -> DNN-only",
+   "status": "PASS",
+   "detail": "outputs identical: True"
+  },
+  {
+   "group": "robust",
+   "name": "LL NaN/Inf burst (hybrid), safety wrapper",
+   "status": "PASS",
+   "detail": "output finite throughout; tail RMS -25.5 dBFS"
+  },
+  {
+   "group": "robust",
+   "name": "LL NaN/Inf burst (DNN-only), safety wrapper",
+   "status": "PASS",
+   "detail": "output finite throughout; tail RMS -25.3 dBFS"
+  },
+  {
+   "group": "robust",
+   "name": "LL plain engine recovers after NaN/Inf burst",
+   "status": "PASS",
+   "detail": "18 non-finite output blocks (the live launcher's safety wrapper zeroes them)"
+  },
+  {
+   "group": "robust",
+   "name": "LL reset() determinism",
+   "status": "PASS",
+   "detail": "max |diff| = 0.0e+00"
+  },
+  {
+   "group": "robust",
+   "name": "LL long-run: bounded timing history (1 h of blocks)",
+   "status": "PASS",
+   "detail": "1500 entries kept, timing_stats() 0.57 ms (plain engine after 1 h: ~25 ms on an M4)"
+  },
+  {
+   "group": "timing",
+   "name": "LL/ORT 3000 hops, p99 < 10 ms deadline",
+   "status": "PASS",
+   "detail": "mean 2.231  p50 2.196  p99 3.618  p99.9 4.784  max 5.901 ms; hops > 10 ms: 0/3000; RTF 0.223",
+   "timing": {
+    "hops": 3000,
+    "mean_ms": 2.23117745793085,
+    "p50_ms": 2.1959169971523806,
+    "p99_ms": 3.617958090544558,
+    "p99_9_ms": 4.784096337651265,
+    "max_ms": 5.900584001210518,
+    "misses_gt_10ms": 0,
+    "rtf": 0.223117745793085,
+    "strict": false
+   }
+  }
+ ],
+ "models": {
+  "HQ": {
+   "onnx": "exports/dancnet_hqft.onnx",
+   "quality_ORT": {
+    "dualmic_v1": {
+     "means": {
+      "pesq_wb": 2.2009759098291397,
+      "pesq_nb": 2.823718249797821,
+      "stoi": 0.9210369976000017,
+      "snr": 11.7218196116895
+     },
+     "ref_means": {
+      "pesq_wb": 2.2009759098291397,
+      "pesq_nb": 2.823718249797821,
+      "stoi": 0.9210369976000017,
+      "snr": 11.7218196116895
+     },
+     "max_abs_delta": {
+      "pesq_wb": 4.440892098500626e-16,
+      "pesq_nb": 0.0,
+      "stoi": 1.1102230246251565e-16,
+      "snr": 1.7763568394002505e-15
+     },
+     "failed_files": 0
+    },
+    "defence_v1": {
+     "means": {
+      "pesq_wb": 2.3552226573228836,
+      "pesq_nb": 2.910843402147293,
+      "stoi": 0.9015366201608643,
+      "snr": 13.433124981423632
+     },
+     "ref_means": {
+      "pesq_wb": 2.355223134160042,
+      "pesq_nb": 2.910843104124069,
+      "stoi": 0.9015366118114712,
+      "snr": 13.433125593196769
+     },
+     "max_abs_delta": {
+      "pesq_wb": 2.4080276489257812e-05,
+      "pesq_nb": 1.1920928955078125e-06,
+      "stoi": 2.7417891623748858e-08,
+      "snr": 2.427511248015435e-06
+     },
+     "failed_files": 0
+    }
+   },
+   "timing_ORT": {
+    "hops": 3000,
+    "mean_ms": 2.2696580063396445,
+    "p50_ms": 2.2195830024429597,
+    "p99_ms": 3.6789212474832214,
+    "p99_9_ms": 5.006681540166099,
+    "max_ms": 5.998291002470069,
+    "misses_gt_10ms": 0,
+    "rtf": 0.22696580063396446,
+    "strict": false
+   }
+  },
+  "LL": {
+   "onnx": "exports/dancnet_ll.onnx",
+   "quality_ORT": {
+    "dualmic_v1": {
+     "means": {
+      "pesq_wb": 2.194309890270233,
+      "pesq_nb": 2.736105799674988,
+      "stoi": 0.9164299072358355,
+      "snr": 12.049435963818237
+     },
+     "ref_means": {
+      "pesq_wb": 2.194309890270233,
+      "pesq_nb": 2.736105799674988,
+      "stoi": 0.9164299072358355,
+      "snr": 12.049435963818237
+     },
+     "max_abs_delta": {
+      "pesq_wb": 0.0,
+      "pesq_nb": 0.0,
+      "stoi": 0.0,
+      "snr": 0.0
+     },
+     "failed_files": 0
+    },
+    "defence_v1": {
+     "means": {
+      "pesq_wb": 2.261523738503456,
+      "pesq_nb": 2.8430068343877792,
+      "stoi": 0.8882961351430898,
+      "snr": 12.660359903852394
+     },
+     "ref_means": {
+      "pesq_wb": 2.2615232169628143,
+      "pesq_nb": 2.8430069983005524,
+      "stoi": 0.8882961279217425,
+      "snr": 12.660358844048083
+     },
+     "max_abs_delta": {
+      "pesq_wb": 5.7220458984375e-06,
+      "pesq_nb": 7.152557373046875e-07,
+      "stoi": 3.414062121898098e-08,
+      "snr": 3.819375720581775e-06
+     },
+     "failed_files": 0
+    }
+   },
+   "timing_ORT": {
+    "hops": 3000,
+    "mean_ms": 2.23117745793085,
+    "p50_ms": 2.1959169971523806,
+    "p99_ms": 3.617958090544558,
+    "p99_9_ms": 4.784096337651265,
+    "max_ms": 5.900584001210518,
+    "misses_gt_10ms": 0,
+    "rtf": 0.223117745793085,
+    "strict": false
+   }
+  }
+ }
+}

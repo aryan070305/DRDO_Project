@@ -1,0 +1,81 @@
+{
+ "inputs": {
+  "spec": [
+   1,
+   1,
+   161,
+   2
+  ],
+  "spec_ref": [
+   1,
+   1,
+   161,
+   2
+  ],
+  "state_in_0": [
+   1,
+   63
+  ],
+  "state_in_1": [
+   1,
+   24,
+   1,
+   48
+  ],
+  "state_in_2": [
+   1,
+   48,
+   1,
+   24
+  ],
+  "state_in_3": [
+   1,
+   192,
+   1,
+   24
+  ],
+  "state_in_4": [
+   1,
+   4,
+   161,
+   2
+  ],
+  "state_in_5": [
+   1,
+   24,
+   96
+  ],
+  "state_in_6": [
+   1,
+   24,
+   96
+  ],
+  "state_in_7": [
+   1,
+   24,
+   96
+  ],
+  "state_in_8": [
+   1,
+   24,
+   96
+  ]
+ },
+ "outputs": [
+  "spec_out",
+  "spp",
+  "state_out_0",
+  "state_out_1",
+  "state_out_2",
+  "state_out_3",
+  "state_out_4",
+  "state_out_5",
+  "state_out_6",
+  "state_out_7",
+  "state_out_8"
+ ],
+ "max_abs_err": 1.1444091796875e-05,
+ "max_abs_ref": 31.87568473815918,
+ "ort_ms_mean": 0.609831596224906,
+ "ort_ms_p99": 0.640227386757033
+}

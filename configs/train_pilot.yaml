@@ -1,0 +1,19 @@
+# Pilot run: pipeline debug + loss-balance check (no synthetic noise yet)
+name: pilot
+seed: 1
+segment_s: 4.0
+batch_size: 16
+lr: 0.001
+lr_min: 0.00002
+warmup_steps: 200
+max_steps: 1500
+max_hours: 0.25
+grad_clip: 5.0
+weight_decay: 0.0001
+workers: 6
+log_every: 50
+val_every: 500
+val_n: 80
+use_synth: false
+model: {}
+loss: {w_spec: 1.0, w_mr: 1.0, w_sisdr: 1.0, w_pmsqe: 1.0, w_asym: 0.5, w_spp: 0.1}

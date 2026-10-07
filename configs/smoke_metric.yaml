@@ -1,0 +1,18 @@
+# Smoke test of the metric-guided fine-tuning path. Not a real run.
+name: smoke_metric
+init_ckpt: checkpoints/smoke_ema/last.pt
+seed: 5
+segment_s: 2.0
+batch_size: 4
+steps: 4
+lr_g: 0.0001
+lr_d: 0.0002
+w_adv: 1.0
+workers: 1
+pesq_workers: 2
+val_n: 8
+val_every: 2
+log_every: 2
+device: cpu
+speech_manifest: speech_train_v2.json
+loss: {w_spec: 1.0, w_mr: 1.0, w_sisdr: 1.0, w_pmsqe: 1.0, w_asym: 0.5, w_spp: 0.1}

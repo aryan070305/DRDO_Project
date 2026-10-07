@@ -1,0 +1,19 @@
+# Smoke test of the v2 training path (EMA + look-ahead + larger model). Not a real run.
+name: smoke_ema
+seed: 3
+segment_s: 2.0
+batch_size: 4
+lr: 0.001
+lr_min: 0.00002
+warmup_steps: 2
+max_steps: 6
+grad_clip: 5.0
+workers: 2
+log_every: 2
+val_every: 3
+val_n: 8
+use_synth: true
+device: cpu
+ema_decay: 0.999
+model: {c: 80, c2: 40, c1: 20, n_dp: 3, df_order: 5, lookahead: 2}
+loss: {w_spec: 1.0, w_mr: 1.0, w_sisdr: 1.0, w_pmsqe: 1.0, w_asym: 0.5, w_spp: 0.1}

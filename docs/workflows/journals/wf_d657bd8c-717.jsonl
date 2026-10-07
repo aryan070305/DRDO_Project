@@ -1,0 +1,9 @@
+{"type":"launched"}
+{"type":"started","key":"v2:19420abc9049db36be46e9a8ef7c6e735312db1a66681c7dda19250dd75b95e2","agentId":"abea60685de2c503c","label":"build:synth_noise","phase":"Build"}
+{"type":"started","key":"v2:38b0718ea8f1c37f5309ffddb5a0deb7296fe2339bd6e9c389271cc01d1e42c8","agentId":"a33d42a57aa1dc0f1","label":"build:baselines","phase":"Build"}
+{"type":"started","key":"v2:9a44b8b390f97d7941b2cdd76437d20f63b5955402910890ad510289723cb7b6","agentId":"a66d785d7ac792faa","label":"build:adaptive_dualmic","phase":"Build"}
+{"type":"started","key":"v2:e0732f6e200e642dd50e386301a24b18bc6cd9b98fc2326d825782e6561cfb8d","agentId":"a739305079d2b8bbd","label":"build:jetson_deploy","phase":"Build"}
+{"type":"failed","key":"v2:38b0718ea8f1c37f5309ffddb5a0deb7296fe2339bd6e9c389271cc01d1e42c8","agentId":"a33d42a57aa1dc0f1"}
+{"type":"failed","key":"v2:9a44b8b390f97d7941b2cdd76437d20f63b5955402910890ad510289723cb7b6","agentId":"a66d785d7ac792faa"}
+{"type":"failed","key":"v2:19420abc9049db36be46e9a8ef7c6e735312db1a66681c7dda19250dd75b95e2","agentId":"abea60685de2c503c"}
+{"type":"failed","key":"v2:e0732f6e200e642dd50e386301a24b18bc6cd9b98fc2326d825782e6561cfb8d","agentId":"a739305079d2b8bbd"}

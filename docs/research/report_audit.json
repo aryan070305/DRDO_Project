@@ -1,0 +1,299 @@
+[
+ {
+  "checked_count": 760,
+  "issues": [
+   {
+    "location": "\u00a78.2 Findings, item 3 (line 528): \"...the hybrid beats DNN-only at every SNR.\"",
+    "claim": "With the gate and the tuned coupling, the hybrid beats DNN-only at every input SNR.",
+    "evidence": "dualmic_v1/per_file.csv, mean output SNR at 10 dB input: hybrid:hqft 16.38 dB vs dnn:hqft 16.86 dB, so the hybrid is 0.48 dB worse. The HQ base model shows the same thing (hybrid:hq 16.41 vs dnn:hq 16.70). Table R7 itself prints 16.38 vs 16.86. PESQ-WB and STOI do favour the hybrid at every SNR, and LL favours the hybrid on all three metrics.",
+    "severity": "wrong",
+    "suggested_fix": "Say the hybrid beats DNN-only on PESQ-WB and STOI at every SNR and on output SNR from -5 to 5 dB, and that at 10 dB the HQ hybrid's output SNR is 0.5 dB below DNN-only (16.4 vs 16.9 dB)."
+   },
+   {
+    "location": "\u00a76.2 items 2-3 (lines 275-276): \"The NLMS is per-bin, with 4 complex taps across frames (\u224850 ms...)\" / \"The step size is \u03bc\u00b7(1\u2212SPP_bin)\u00b7(1\u2212SPP_global)\u00b2\"",
+    "claim": "The deployed coupling uses 4 taps (about 50 ms) and gate exponent 2.",
+    "evidence": "src/danc/inference/engine.py EngineConfig defaults are lms_mu=0.1, lms_taps=2, gate_power=4.0. A comment there says the first version used mu=0.3, taps=4, gate_power=2. \u00a78.2 finding 3 and \u00a78.4 also report \u03bc=0.1, 2 taps, exponent 4, and the 4-tap setting is labelled 'untuned' in Table R6. So \u00a76.2 describes the superseded configuration, which contradicts \u00a78.2 and the code.",
+    "severity": "wrong",
+    "suggested_fix": "Change \u00a76.2 to 2 complex taps (about 30 ms of response) and \u03bc\u00b7(1\u2212SPP_bin)\u00b7(1\u2212SPP_global)^4 with \u03bc=0.1, and mention that 4 taps, \u03bc=0.3 and exponent 2 was the untuned first version."
+   },
+   {
+    "location": "\u00a75 table, 'Perceptual fine-tune' row (line 241): \"The fine-tuned model is adopted only if PESQ + 2\u00b7STOI rises without an SI-SDR drop.\"",
+    "claim": "The adoption criterion requires PESQ + 2\u00b7STOI to rise.",
+    "evidence": "reports/results/finetune_decision_rule.md (the pre-registered rule) allows \u0394PESQ-WB \u2265 \u22120.02 and \u0394STOI \u2265 \u22120.003 on the defence set, plus VB and transparency criteria. It has no 'PESQ+2\u00b7STOI rises' condition. HQ was adopted although PESQ+2\u00b7STOI fell on the defence test set (\u0394PESQ \u22120.0144, \u0394STOI +0.00001 \u2192 \u22120.014, recomputed from defence_v1/per_file.csv) and on validation (score 4.3234 \u2192 4.3024, logs/hq_metric.out).",
+    "severity": "wrong",
+    "suggested_fix": "Replace the sentence with the actual pre-registered rule: defence \u0394PESQ-WB \u2265 \u22120.02, \u0394STOI \u2265 \u22120.003, \u0394SI-SDR \u2265 \u22120.2 dB; VB STOI up or PESQ +0.05; transparency not lower."
+   },
+   {
+    "location": "\u00a70 bullet list (line 23): \"a streaming ONNX inference engine that is bit-exact with the trained model\"",
+    "claim": "The ONNX streaming engine is bit-exact with the trained model.",
+    "evidence": "\u00a76.2 of the same report gives ONNX-vs-PyTorch max abs error \u2264 1.3e-5 and streaming-vs-offline \u2264 1e-4. exports/dancnet_hqft.json has max_abs_err 1.24e-5, and tests/test_engine.py / test_model.py use atol 1e-4 / 1e-5. That is numerically close, not bit-exact.",
+    "severity": "wrong",
+    "suggested_fix": "Write 'numerically equivalent to the trained model (\u22641.3e-5 ONNX vs PyTorch, \u22641e-4 streaming vs offline)'."
+   },
+   {
+    "location": "\u00a78.2 'Tuning hygiene' (line 531): \"The reported setting was then selected on the validation scenes only, and it coincides with the exploratory optimum.\"",
+    "claim": "The whole coupling setting was selected on validation scenes only and matches the exploratory test-subset optimum.",
+    "evidence": "logs/tune_hybrid_val.out and dualmic_val/hybrid_tuning.json show the validation grid held gate_power fixed at 4.0 (16/16 rows, also hard-coded in scripts/tune_hybrid.py). Only the exploratory test-subset sweep (logs/tune_hybrid_on_test_subset_EXPLORATORY.out) compared gate_power 2.0 vs 4.0, so the exponent 4 was chosen on test data. The exploratory top row also has gate_threshold 0.3, while the deployed/validation choice has gate_threshold None, so the two optima are not identical.",
+    "severity": "unsupported",
+    "suggested_fix": "State that \u03bc and taps were selected on dualmic_val, that the gate exponent 4 was fixed from the exploratory test-subset sweep, and that the exploratory optimum differed in gate_threshold (0.3 vs none)."
+   },
+   {
+    "location": "\u00a78.4 table, 'Does NLMS tuning matter?' (line 570): \"\u03bc = 0.3 \u2192 0.1 and 4 \u2192 2 taps: +0.14 PESQ, +2.4 dB SNR\"; also the Table R6 label 'Hybrid, untuned coupling (mu=0.3, 4 taps)'",
+    "claim": "The gain comes from changing \u03bc and taps only.",
+    "evidence": "The deltas are right (hybrid:hq 2.446/13.47 vs hybrid_mu0.3:hq 2.308/11.09 \u2192 +0.138, +2.38 dB). But engine.py says the first version used gate_power=2, and the tuned one uses 4. The exploratory log confirms the mu=0.3/taps=4 runs with gate_power 2.0. So the comparison also includes a gate exponent change from 2 to 4.",
+    "severity": "imprecise",
+    "suggested_fix": "Write '\u03bc 0.3\u21920.1, 4\u21922 taps and gate exponent 2\u21924' in \u00a78.4, and add 'exp. 2' to the R6 untuned label."
+   },
+   {
+    "location": "\u00a70 PESQ>4 paragraph (line 53): \"No condition averages PESQ-WB above 3.19.\"",
+    "claim": "No evaluation condition has mean PESQ-WB above 3.19.",
+    "evidence": "This holds only per input SNR for HQ deployed (3.193 at 15 dB). Per category \u00d7 SNR (defence_v1/per_file.csv), HQ deployed averages 3.344 at impulsive 15 dB and 3.241 at stationary 15 dB. HQ base averages 3.211 at 15 dB. The report's own clean-input transparency test (Table R10) averages 4.47 on LibriSpeech.",
+    "severity": "imprecise",
+    "suggested_fix": "Narrow the claim: 'No input-SNR condition of the noisy defence set averages PESQ-WB above 3.19 (deployed HQ); the best category/SNR cell is 3.34 (impulsive, 15 dB).'"
+   },
+   {
+    "location": "\u00a72.2 point 1 (line 122) and \u00a76.3 CPU path (line 305): \"run in about 1\u20132 ms per 10 ms frame on a single M4 core [M]\" / \"With the measured 1\u20132 ms per frame on the M4 [M]\"",
+    "claim": "Measured per-frame compute on M4 is 1-2 ms.",
+    "evidence": "reports/results/latency_mac_m4.json, which \u00a76.2 and \u00a70 use, gives a network step of 0.42 ms (hqft) / 0.43 ms (ll) and a full engine block of 0.50 / 0.51 ms mean, max 0.75 ms. The paced runs (simulated_live_runs.json) give 2.04\u20132.20 ms mean. '1\u20132 ms' matches neither. It seems to come from exports/dancnet_hqft.json ort_ms_mean 1.19 / p99 2.01, an export-time check, while dancnet_hq.json shows 0.36 ms. This feeds the Jetson 2\u20136 ms estimate.",
+    "severity": "imprecise",
+    "suggested_fix": "Use the benchmark figures (\u22480.5 ms engine block unpaced, \u22482.1 ms paced) and recompute the Jetson [E] estimate from them."
+   },
+   {
+    "location": "\u00a76.2 latency budget table (line 295): \"Compute | < 1 ms per hop on M4 [M]\"",
+    "claim": "Compute is below 1 ms per hop.",
+    "evidence": "This is true for the unpaced benchmark (max 0.75 ms). In the paced real-time runs that the same section reports (simulated_live_runs.json), per-hop compute was 2.04\u20132.20 ms mean and up to 4.25 ms max.",
+    "severity": "imprecise",
+    "suggested_fix": "Write '0.5 ms mean unpaced, \u22482.1 ms mean / \u22644.3 ms max in paced real-time; absorbed in the 10 ms hop'."
+   },
+   {
+    "location": "\u00a75 runs table, hq_metric row (line 250): \"2.459 / 0.921 / 14.5 dB (in-domain)\" under 'Best validation'; same 2.459 in finetune_decision_hq.md ('validation 2.482 \u2192 2.459 over the run')",
+    "claim": "Best (or end-of-run) validation PESQ of hq_metric is 2.459.",
+    "evidence": "logs/hq_metric.out validation: step 500 2.4731 (best score 4.3142), step 1000 2.4639, step 1500 2.4594, step 2000 2.4607 (final; the deployed checkpoint is last.pt). 2.459 is the step-1500 minimum. It is neither the best (2.473) nor the final/deployed value (2.461).",
+    "severity": "imprecise",
+    "suggested_fix": "Report the final (deployed last.pt) value 2.461 / 0.921 / 14.5 dB, or the best 2.473, and label which one it is. Fix finetune_decision_hq.md to say 2.482 \u2192 2.461."
+   },
+   {
+    "location": "\u00a75 table, Optimiser and EMA rows (lines 238-239): \"batch 16 \u00d7 4 s\", \"lr 1e-3, 1000-step warm-up, cosine decay to 2e-5\", \"Weight EMA with decay 0.999\"",
+    "claim": "Training used 4 s segments and EMA decay 0.999.",
+    "evidence": "checkpoints/hq/config.yaml and checkpoints/ll/config.yaml have segment_s 3.0, which matches '\u00d7 3 s' in the runs table of the same section. Only the pilot used 4 s. EMA decay is 0.999 only for hq. ll, hq_metric and ll_metric (both deployed models) use ema_decay 0.998. ll also used lr 3e-4, 200 warm-up steps and lr_min 1e-5.",
+    "severity": "imprecise",
+    "suggested_fix": "Change to 'batch 16 \u00d7 3 s (pilot 4 s)', and note EMA 0.999 for hq and 0.998 for ll and the fine-tunes, plus the LL lr schedule."
+   },
+   {
+    "location": "\u00a78.2 Findings, item 1 (line 526): \"NLMS alone barely helps (+0.7 dB)... Untuned (\u03bc = 0.3) it is worse than doing nothing\"",
+    "claim": "Tuned NLMS-only gives a small gain, and only the untuned NLMS is worse than doing nothing.",
+    "evidence": "dualmic_v1/per_file.csv: tuned NLMS-only is also worse than the unprocessed primary on PESQ-WB (1.180 vs 1.230), STOI (0.788 vs 0.798), ESTOI (0.608 vs 0.617) and SI-SDR (1.12 vs 2.58 dB). Its output SNR is below the input at 5 dB (4.75) and at 10 dB input (4.34 dB). The +0.7 dB is only the output-SNR average.",
+    "severity": "imprecise",
+    "suggested_fix": "Say the tuned NLMS alone gains +0.7 dB output SNR on average but lowers PESQ, STOI and SI-SDR, and lowers SNR at \u22655 dB input."
+   },
+   {
+    "location": "\u00a78.2 Findings, item 2 (line 527): \"Without the speech-presence gate, the hybrid is far worse than DNN-only (PESQ 1.82 vs 2.15).\"",
+    "claim": "Ungated hybrid PESQ 1.82 vs DNN-only 2.15.",
+    "evidence": "The ungated hybrid (hybrid_nogate:hq, 1.818) uses the HQ base model, so its DNN-only counterpart is dnn:hq = 2.167 (2.17). 2.15 is dnn:hqft (HQ deployed). The conclusion stands, but the two numbers come from different models.",
+    "severity": "imprecise",
+    "suggested_fix": "Use 1.82 vs 2.17 (both HQ base)."
+   },
+   {
+    "location": "\u00a70 Real time (line 56): \"In paced real-time simulation it took 2.2 ms mean and 4.3 ms max\"",
+    "claim": "Paced mean compute is 2.2 ms.",
+    "evidence": "simulated_live_runs.json per-scene means are 2.166, 2.044, 2.131 and 2.199 ms. The overall mean (equal blocks) is 2.135 ms \u2192 2.1 ms. 2.2 is the largest per-scene mean, and \u00a76.2 says '2.0\u20132.2 ms mean'.",
+    "severity": "ok-but-note",
+    "suggested_fix": "Use '2.1 ms mean (2.0\u20132.2 per scene), 4.3 ms max', consistent with \u00a76.2."
+   },
+   {
+    "location": "\u00a78.3 Interpretation (lines 558-560): \"lowered STOI below the unprocessed input at input SNR above 10 dB\" ... \"fixed most of this: ... VoiceBank STOI 0.919\"",
+    "claim": "The STOI loss on VB was only above 10 dB input, and the final stage fixed most of it.",
+    "evidence": "vbdemand/per_file.csv binned by input_snr_measured: HQ base is already below noisy in the 5\u201310 dB bin (0.907 vs 0.917) and overall (0.907 vs 0.921). The deployed HQ (hq_metric) is still below the unprocessed input overall (0.919 vs 0.921) and at >10 dB (0.931 vs 0.942; 0.941 vs 0.962). DFN3 also has the best VB STOI/ESTOI (0.925/0.840), not only PESQ.",
+    "severity": "ok-but-note",
+    "suggested_fix": "Say the base models lowered STOI above about 5 dB, and the deployed HQ still sits 0.002 below the unprocessed input on VB overall and below it above 10 dB."
+   },
+   {
+    "location": "\u00a78 intro (line 347): \"Enhanced audio for the main systems is in reports/audio/\"",
+    "claim": "Enhanced audio for the main systems is available.",
+    "evidence": "reports/audio/ has enhanced_defence_v1_dancnet_hq (base HQ, written 03:58, before hq_metric existed), dancnet_ll, dancnet_ll_metric (not adopted) and dfn3. There is no enhanced_defence_v1_dancnet_hq_metric, so the deployed HQ model's single-mic defence outputs are missing. The example spectrogram figure shows D-ANC LL only.",
+    "severity": "ok-but-note",
+    "suggested_fix": "Save the deployed HQ (hq_metric) defence audio, or state that the HQ audio in reports/audio is the base model."
+   },
+   {
+    "location": "Deployment labels: deploy/jetson/README.md, danc.service, setup_audio.sh, trt_runner.py, src/danc/inference/realtime.py default --onnx",
+    "claim": "The deploy kit runs the deployed model.",
+    "evidence": "All of these reference exports/dancnet_stream.onnx, which does not exist in exports/. The report (\u00a74 line 216, \u00a76.2), finetune_decision_hq.md and finetune_decision_ll.md all name dancnet_hqft.onnx (from checkpoints/hq_metric/last.pt) and dancnet_ll.onnx (from checkpoints/ll/best.pt) as deployed. Those labels agree with each other and with evaluate.py / make_tables.py, but the deploy kit's default path doesn't match them.",
+    "severity": "ok-but-note",
+    "suggested_fix": "Point the Jetson kit and realtime.py default to exports/dancnet_hqft.onnx (HQ) / dancnet_ll.onnx (LL), or create a dancnet_stream.onnx alias and document which model it is."
+   },
+   {
+    "location": "\u00a76.1 ONNX contract (line 266): \"Input spec [1,1,161,2] plus 7 state tensors (\u224832\u201360 KB)\"",
+    "claim": "The exported models have 7 state tensors of about 32-60 KB.",
+    "evidence": "exports/dancnet_hqft.json, dancnet_hq.json and dancnet_ll.json each list 8 state tensors (state_in_0..state_in_7), about 12.9k / 12.1k floats \u2248 51 KB (HQ) / 48 KB (LL). Only dancnet_untrained_test.json (old architecture) has 7 states (\u224832 KB).",
+    "severity": "imprecise",
+    "suggested_fix": "Change to '8 state tensors (\u224848\u201352 KB for the deployed v2 models)'."
+   }
+  ]
+ },
+ {
+  "issues": [
+   {
+    "location": "\u00a76.2 item 3 (line 276): \"The step size is \u03bc\u00b7(1\u2212SPP_bin)\u00b7(1\u2212SPP_global)\u00b2\"",
+    "claim": "The NLMS step size is gated with exponent 2 on the global SPP.",
+    "evidence": "src/danc/inference/engine.py EngineConfig.gate_power = 4.0 and _mu_scale returns (1-spp)*(1-s_glob)**gate_power. The exponent 2 was the first, untuned version (engine.py comment: \"first version used mu=0.3, taps=4, gate_power=2\"). \u00a78.2 finding 3 of the same report says \"gate exponent 4\", so the report contradicts itself.",
+    "severity": "wrong",
+    "suggested_fix": "Change to \u03bc\u00b7(1\u2212SPP_bin)\u00b7(1\u2212SPP_global)^4, with \u03bc = 0.1 and SPP_global = mean SPP over bins 6\u201370 (300\u20133500 Hz)."
+   },
+   {
+    "location": "\u00a76.2 item 2 (line 275): \"with 4 complex taps across frames (\u224850 ms of reference-to-primary response)\"",
+    "claim": "The deployed sub-band NLMS uses 4 taps per bin, covering about 50 ms.",
+    "evidence": "engine.py EngineConfig.lms_taps = 2 (tuned on dualmic_val), and \u00a78.2 finding 3 also says 2 taps. 2 taps cover a 20 ms window plus one 10 ms hop, about 30 ms. 4 taps is SubbandNLMS's class default and the old untuned setting.",
+    "severity": "wrong",
+    "suggested_fix": "Say 2 complex taps per bin (\u224830 ms of reference-to-primary response), \u03bc = 0.1. Mention that 4 taps / \u03bc = 0.3 was the untuned first version."
+   },
+   {
+    "location": "\u00a76.1 ONNX contract (line 266): \"Input spec [1,1,161,2] plus 7 state tensors (\u224832\u201360 KB)\"",
+    "claim": "The ONNX models take 7 state tensors.",
+    "evidence": "Each dual-path block adds one GRU state, so there are 5 + n_dp states. The deployed v2 models have n_dp = 3, giving 8 states (state_in_0..7). This is confirmed in exports/dancnet_hqft.json and exports/dancnet_ll.json and in the ORT session inputs of dancnet_hqft.onnx. Only the n_dp = 2 pilot/default config has 7. Sizes: HQ 51.5 KB, LL 48.4 KB, default 32.0 KB.",
+    "severity": "wrong",
+    "suggested_fix": "Say 8 state tensors for the deployed v2 models (7 for the 2-block LL-small), about 48\u201352 KB for the deployed models."
+   },
+   {
+    "location": "\u00a75 table, Perceptual fine-tune row (line 241): \"The fine-tuned model is adopted only if PESQ + 2\u00b7STOI rises without an SI-SDR drop\"; also \u00a79 R4 (line 590) \"Adopt the metric fine-tune only if SI-SDR does not drop\"",
+    "claim": "The adoption criterion is a rise in validation PESQ + 2\u00b7STOI with no SI-SDR drop.",
+    "evidence": "The rule actually applied is reports/results/finetune_decision_rule.md: defence \u0394PESQ \u2265 \u22120.02, \u0394STOI \u2265 \u22120.003, \u0394SI-SDR \u2265 \u22120.2 dB, plus VoiceBank and transparency criteria. hq_metric was adopted although its validation PESQ+2\u00b7STOI fell from 4.3234 (step 0) to 4.3024 (step 2000) and validation SI-SDR fell from 14.514 to 14.474 (logs/train_hq_metric.jsonl). No best.pt was ever written, which is why last.pt was exported. The stated criterion would have rejected the deployed HQ model. The \u00a75 Observations bullet in the same section correctly cites the pre-registered rule, so the section contradicts itself.",
+    "severity": "wrong",
+    "suggested_fix": "Replace with the pre-registered rule (defence-set non-inferiority margins, VoiceBank generalisation and clean transparency; finetune_decision_rule.md). Update R4 the same way: SI-SDR may drop by at most 0.2 dB."
+   },
+   {
+    "location": "\u00a70 bullet (line 23): \"a streaming ONNX inference engine that is bit-exact with the trained model\"",
+    "claim": "The ONNX engine is bit-exact with the trained model.",
+    "evidence": "exports/dancnet_hqft.json gives max_abs_err 1.24e-5 against PyTorch. Tests assert < 1e-4 (tests/test_engine.py, tests/test_model.py). \u00a74 and \u00a76.2 of the report themselves cite \u2264 1e-4 and \u2264 1.3e-5.",
+    "severity": "wrong",
+    "suggested_fix": "Say \"numerically equivalent (\u2264 1.3e-5 ONNX vs PyTorch; streaming vs offline \u2264 1e-4)\"."
+   },
+   {
+    "location": "\u00a72.2 point 1 (line 122): \"run in about 1\u20132 ms per 10 ms frame on a single M4 core [M]\"; \u00a76.3 (line 305): \"With the measured 1\u20132 ms per frame on the M4 [M], that suggests roughly 2\u20136 ms\"; \u00a76.2 budget (line 295): \"Compute < 1 ms per hop\"",
+    "claim": "The measured per-frame compute on the M4 is 1\u20132 ms. The Jetson estimate of 2\u20136 ms is derived from it.",
+    "evidence": "reports/results/latency_mac_m4.json, unpaced: network step 0.41\u20130.43 ms mean, full engine 0.50\u20130.51 ms mean, 0.61 ms p99.9. reports/results/simulated_live_runs.json, paced: 2.04\u20132.20 ms mean, max 4.25 ms. Neither is 1\u20132 ms. The only ~1.2 ms figure is the export-time verify loop (exports/dancnet_hqft.json ort_ms_mean 1.19), which is not the benchmark. Scaling the paced figures by 2\u20133\u00d7 gives about 4\u20136.6 ms mean and 8.5\u201312.8 ms worst case, not 2\u20136 ms. The budget's \"< 1 ms\" holds only unpaced. The GMAC/s figures are also tagged [M] but are analytic counts from macs_per_frame.",
+    "severity": "imprecise",
+    "suggested_fix": "Quote 0.5 ms (unpaced engine) and 2.0\u20132.2 ms mean / 4.3 ms max (paced), and redo the Jetson extrapolation from those (about 1\u20131.5 ms unpaced, about 4\u20137 ms paced mean, higher worst case). Tag the GMAC figures as analytic."
+   },
+   {
+    "location": "\u00a73.3 (line 169) \"A 4 s crop\"; \u00a75 Optimiser row (line 238) \"batch 16 \u00d7 4 s\"",
+    "claim": "Training uses 4 s speech crops, batch 16 \u00d7 4 s.",
+    "evidence": "configs/train_hq.yaml, train_v2_ll.yaml, finetune_hq_metric.yaml and finetune_ll_metric.yaml all set segment_s: 3.0. The report's own runs table (line 248\u2013249) says 18 000 \u00d7 16 \u00d7 3 s. 4 s applies only to pilot/main and to the validation set (build_val_set default).",
+    "severity": "imprecise",
+    "suggested_fix": "State 3 s crops (batch 16 \u00d7 3 s) for the v2 runs; 4 s only for the pilot run."
+   },
+   {
+    "location": "\u00a75 EMA row (line 239): \"Weight EMA with decay 0.999\"",
+    "claim": "The EMA decay is 0.999.",
+    "evidence": "configs/train_hq.yaml ema_decay 0.999, but train_v2_ll.yaml (the deployed LL) and both finetune_*_metric.yaml use 0.998. The fine-tune also uses a hard-coded grad clip of 3.0 and a constant LR of 5e-5 (src/danc/train/finetune_metric.py), unlike the Optimiser row.",
+    "severity": "imprecise",
+    "suggested_fix": "Give 0.999 for HQ and 0.998 for LL and the fine-tunes, and list the LL / fine-tune optimiser settings separately (LL: lr 3e-4, 200 warm-up, cosine to 1e-5)."
+   },
+   {
+    "location": "\u00a75 runs table (line 250\u2013251): hq_metric \"2.459 / 0.921 / 14.5 dB\", ll_metric \"2.33 / 0.912 / 13.8 dB\" under \"Best validation\"",
+    "claim": "These are the best validation scores of the fine-tune runs.",
+    "evidence": "logs/train_hq_metric.jsonl: step 0 = 2.4822 (the best, equal to the base); 1500 = 2.4594; 2000 (= deployed last.pt) = 2.4607. 2.459 is the step-1500 value, not the deployed checkpoint (2.461). ll_metric last.pt = 2.3248 (rounds to 2.32). In both runs the best validation is the unchanged step-0 model.",
+    "severity": "imprecise",
+    "suggested_fix": "Report the deployed (last.pt, step 2000) values, 2.461 / 0.921 / 14.47 and 2.325 / 0.912 / 13.81, and relabel the column \"final\" for the fine-tune rows."
+   },
+   {
+    "location": "\u00a710 (lines 624\u2013625): DEPLOYMENT.json and MANIFEST.sha256",
+    "claim": "exports/DEPLOYMENT.json lists ONNX files, checkpoints, hashes and the I/O contract; reports/MANIFEST.sha256 checksums every project file except the venv.",
+    "evidence": "Neither file exists (ls exports, ls reports). scripts/make_manifest.py would create both, but it is not in the \u00a710 \"exact sequence\". When run, MANIFEST also excludes __pycache__, .pytest_cache, .git, third_party/dfn_pkgs and *.lock, not only the venv. The script's content (hqft and ll ONNX + checkpoints, sha256, I/O contract) matches the description.",
+    "severity": "unsupported",
+    "suggested_fix": "Run scripts/make_manifest.py before release and add it to the \u00a710 sequence. Reword to \"every project file except .venv, caches, .git and third_party/dfn_pkgs\"."
+   },
+   {
+    "location": "\u00a710 \"Exact sequence used in this project\" (lines 607\u2013622)",
+    "claim": "The listed commands reproduce the project's results.",
+    "evidence": "(a) scripts/benchmark_latency.py defaults to --models hq,ll,pilot, so the deployed hqft row in latency_mac_m4.json needs --models hq,hqft,ll,pilot. (b) file:dfn3 needs scripts/run_deepfilternet3.py, which is not listed. (c) Table R6 rows for DNN only / Hybrid (HQ base) need dnn:hq and hybrid:hq, which are not in the listed dualmic command. The untuned rows (\u03bc = 0.3, 4 taps, exponent 2) cannot be produced by any current command, because evaluate.py has no EngineConfig override and the defaults are now tuned (logs/eval_dualmic_hq*.out show separate runs). (d) There is no command for the transparency table (R10) or for make_manifest.py.",
+    "severity": "imprecise",
+    "suggested_fix": "Add the missing commands (DFN3 run, --models hq,hqft,ll,pilot, dnn:hq / hybrid:hq, the transparency eval, make_manifest.py). Note that the untuned rows came from an earlier EngineConfig default."
+   },
+   {
+    "location": "README.md Reproduce block (lines 67\u201375)",
+    "claim": "README reproduces the HQ model: train_hq \u2192 export checkpoints/hq/best.pt \u2192 exports/dancnet_hq.onnx, with the PESQ-guided fine-tune marked \"optional\", and the dual-mic eval uses dnn:hq/hybrid:hq.",
+    "evidence": "The report (\u00a74 line 216, \u00a710 line 614) says the deployed HQ is hq_metric/last.pt \u2192 exports/dancnet_hqft.onnx, so the fine-tune is required for the deployed HQ. The README never exports dancnet_hqft.onnx, so its evaluation reproduces the base HQ, not the deployed one.",
+    "severity": "imprecise",
+    "suggested_fix": "Align README with \u00a710: drop \"optional\" for the HQ fine-tune, add the export of checkpoints/hq_metric/last.pt to exports/dancnet_hqft.onnx, and evaluate dnn:hqft / hybrid:hqft."
+   },
+   {
+    "location": "\u00a79 R11 (line 597): \"A short GPU-server run on the full LibriSpeech-960 + DNS noise + defence data ... Recipes and configs are ready.\"",
+    "claim": "Configs and recipes for a LibriSpeech-960 + DNS-noise GPU run exist.",
+    "evidence": "No config in configs/ references LibriSpeech-960, DNS noise or CUDA. src/danc/data/download.py supports only train-clean-5, dev-clean, test-clean, a partial train-clean-100, NOISEX, ESC-50, VB-D and drone. train.py defaults to MPS/CPU (CUDA only via a manual 'device' key).",
+    "severity": "unsupported",
+    "suggested_fix": "Say the training code is device-agnostic but data download and configs for LibriSpeech-960 / DNS still need to be written."
+   },
+   {
+    "location": "\u00a78.2 tuning hygiene (line 531) / finding 3 (line 528), relevant to the \u00a76.2 coupling",
+    "claim": "The reported coupling (\u03bc = 0.1, 2 taps, gate exponent 4) was selected on the validation scenes only.",
+    "evidence": "scripts/tune_hybrid.py's validation grid fixes gate_power to [4.0], and reports/results/dualmic_val/hybrid_tuning.json contains only gate_power 4.0. The exponent was compared (2.0 vs 4.0) only in the exploratory sweep on the test subset (logs/tune_hybrid_on_test_subset_EXPLORATORY.out). \u03bc and taps were selected on validation; the exponent was not.",
+    "severity": "unsupported",
+    "suggested_fix": "State that the gate exponent 4 was carried over from the exploratory test-subset sweep, or re-run the validation grid including gate_power 2."
+   },
+   {
+    "location": "\u00a76.2 item 5 (line 278) and \u00a79 R7: \"If the reference mic fails, the engine runs DNN-only\"",
+    "claim": "Reference-mic failure is detected and the engine falls back to DNN-only.",
+    "evidence": "engine.py process_block bypasses the NLMS only when ref is None or exactly all-zero (np.any(ref)). There is no failure detection for a disconnected mic that delivers hum or noise. Such a signal still feeds the NLMS, and only the divergence and output-limit guards mitigate it. realtime.py always passes channel 1 unless --no-lms is set.",
+    "severity": "imprecise",
+    "suggested_fix": "Say that the engine runs DNN-only when the reference is absent or silent (or --no-lms is set), and that other failure modes rely on the divergence and output-limit guards."
+   },
+   {
+    "location": "\u00a76.2 item 4 (line 277): \"a per-bin output limit stops a reference-only transient from being injected\"",
+    "claim": "The output limit prevents injection of reference-only transients.",
+    "evidence": "nlms.py SubbandNLMS out_limit_db = 6.0: |E| \u2264 10^(6/20)\u00b7|P|. It caps injection at +6 dB above the primary per bin; it does not stop it.",
+    "severity": "imprecise",
+    "suggested_fix": "\"limits any reference-only transient to at most +6 dB above the primary in each bin\"."
+   },
+   {
+    "location": "\u00a74 design choices (line 222): \"SPP head. Adds a few hundred MACs\"",
+    "claim": "The SPP head costs a few hundred MACs per frame.",
+    "evidence": "The SPP channel of the 1\u00d71 head conv is 96 units \u00d7 c1 = 20 = 1,920 MACs for v2 (1,536 for the pilot), plus the ERB-to-bin interpolation of 32 \u00d7 97 = 3,104 MACs (dancnet.py forward). That is about 5k MACs per frame: still negligible against 7.64 M, but more than \"a few hundred\".",
+    "severity": "imprecise",
+    "suggested_fix": "\"Adds about 5 k MACs per frame (<0.1 % of the network)\"."
+   },
+   {
+    "location": "\u00a73.1 heading (line 132): \"all fetched and hashed by danc.data.download\"",
+    "claim": "Every corpus is SHA-256 hashed.",
+    "evidence": "data/manifests/provenance.json: the entry librispeech/train-clean-100-partial has no sha256 field. Its note says \"The archive-prefix SHA-256 was therefore not recorded\". All other sources have hashes.",
+    "severity": "imprecise",
+    "suggested_fix": "Add \"except the partial train-clean-100 stream (no hash, see provenance note)\"."
+   },
+   {
+    "location": "\u00a73.1 RIR row (line 143): \"median measured T20 \u2248 0.37 s\"",
+    "claim": "The median measured T20 of the RIR bank is about 0.37 s.",
+    "evidence": "No script, log or results file in src/, scripts/, reports/ or logs/ records a T20 measurement; grep finds the value only in REPORT.md. Recomputing on data/rir_bank/rirs_v2_{train,test}.npz gives 0.20\u20130.24 s (Schroeder \u22125/\u221225 dB crossing \u00d73) or 0.45\u20130.46 s (linear-fit T20), depending on method. The RIRs are truncated at 1.2\u00b7RT60 + 0.05 s.",
+    "severity": "unsupported",
+    "suggested_fix": "Add the measurement script and its output to the repository, or drop the T20 figure and keep the configured RT60 range."
+   },
+   {
+    "location": "\u00a73.2 table (line 158): \"artillery / explosion | Friedlander positive phase 5\u201350 ms\"; gunshot row \"positive phase 0.5\u20133 ms\"",
+    "claim": "Both artillery and explosion use a 5\u201350 ms positive phase, and gunshots 0.5\u20133 ms.",
+    "evidence": "src/danc/data/synth_noise.py: artillery T_pos ~ U(5, 50) ms. explosion() uses T_pos ~ U(2, 10) ms. The gunshot T_pos U(0.5, 3) ms is multiplied by (1 + dist/400) with dist up to 300 m, which gives up to about 5.3 ms.",
+    "severity": "imprecise",
+    "suggested_fix": "Give separate values: artillery 5\u201350 ms, explosion 2\u201310 ms, gunshot 0.5\u20133 ms (stretched with distance up to about 5 ms)."
+   },
+   {
+    "location": "\u00a73.3 (line 170): mixed = \"a stationary or rotor bed plus impulsive events, sometimes with a third rotor or siren layer\"",
+    "claim": "Mixed scenes use rotor beds and a rotor or siren third layer.",
+    "evidence": "src/danc/data/mixer.py _noise('mixed'): the bed is drawn from any stationary or non-stationary source, including babble, factory, chainsaw, rain and wind. The third layer (p = 0.4) is any 'nonstationary' source, not specifically rotor or siren.",
+    "severity": "ok-but-note",
+    "suggested_fix": "\"a stationary or non-stationary bed plus impulsive events; with p = 0.4 a third non-stationary layer (e.g. rotor, drone, siren)\"."
+   },
+   {
+    "location": "\u00a75 Loss row (line 231): \"... + 0.5\u00b7L_asym ...\"",
+    "claim": "The loss weights listed are the effective weights.",
+    "evidence": "src/danc/train/losses.py asym_loss returns 100\u00b7mean(relu(mr\u2212me)\u00b2), and cspec_loss is internally 30\u00b7L_ri + 70\u00b7L_mag. The effective over-suppression weight is therefore 50\u00d7 the plain MSE. The table documents the 30/70 factor but not the \u00d7100.",
+    "severity": "ok-but-note",
+    "suggested_fix": "Mention the internal \u00d7100 scaling of L_asym (or define L_asym with it)."
+   },
+   {
+    "location": "\u00a77 bench prototype (line 319): \"Output. Stereo headset out, plus line out to the radio.\"",
+    "claim": "realtime.py implements separate headset and radio line outputs.",
+    "evidence": "src/danc/inference/realtime.py opens one sd.Stream with 2 output channels and writes the same mono signal to both (np.repeat). Any separate radio line out depends on the audio interface's routing, not on the application.",
+    "severity": "ok-but-note",
+    "suggested_fix": "\"Identical processed signal on both output channels; headset and radio line-out are taken from the interface's outputs\"."
+   }
+  ],
+  "checked_count": 95
+ }
+]

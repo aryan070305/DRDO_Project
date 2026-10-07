@@ -1,0 +1,269 @@
+[
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.1,
+   "lms_taps": 2,
+   "gate_threshold": 0.3,
+   "gate_power": 4.0
+  },
+  [
+   2.4,
+   0.93,
+   13.5661,
+   13.5646
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.1,
+   "lms_taps": 2,
+   "gate_threshold": null,
+   "gate_power": 4.0
+  },
+  [
+   2.4019,
+   0.9302,
+   13.4888,
+   13.5097
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.1,
+   "lms_taps": 2,
+   "gate_threshold": 0.3,
+   "gate_power": 2.0
+  },
+  [
+   2.3961,
+   0.9298,
+   13.2736,
+   13.2921
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.1,
+   "lms_taps": 4,
+   "gate_threshold": null,
+   "gate_power": 4.0
+  },
+  [
+   2.3712,
+   0.9283,
+   13.5895,
+   13.5662
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.1,
+   "lms_taps": 4,
+   "gate_threshold": 0.3,
+   "gate_power": 4.0
+  },
+  [
+   2.3661,
+   0.928,
+   13.6153,
+   13.5774
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.1,
+   "lms_taps": 4,
+   "gate_threshold": 0.3,
+   "gate_power": 2.0
+  },
+  [
+   2.3768,
+   0.9283,
+   13.424,
+   13.4011
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.1,
+   "lms_taps": 4,
+   "gate_threshold": null,
+   "gate_power": 2.0
+  },
+  [
+   2.3812,
+   0.9287,
+   13.2532,
+   13.2792
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.1,
+   "lms_taps": 2,
+   "gate_threshold": null,
+   "gate_power": 2.0
+  },
+  [
+   2.385,
+   0.9288,
+   12.9685,
+   13.0299
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.3,
+   "lms_taps": 4,
+   "gate_threshold": 0.3,
+   "gate_power": 4.0
+  },
+  [
+   2.3574,
+   0.9263,
+   12.3709,
+   12.3514
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.3,
+   "lms_taps": 4,
+   "gate_threshold": null,
+   "gate_power": 4.0
+  },
+  [
+   2.3536,
+   0.9263,
+   12.2573,
+   12.2662
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.3,
+   "lms_taps": 2,
+   "gate_threshold": 0.3,
+   "gate_power": 4.0
+  },
+  [
+   2.3495,
+   0.9262,
+   12.1883,
+   12.1976
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.3,
+   "lms_taps": 2,
+   "gate_threshold": null,
+   "gate_power": 4.0
+  },
+  [
+   2.3397,
+   0.9249,
+   11.9798,
+   12.0074
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.3,
+   "lms_taps": 4,
+   "gate_threshold": 0.3,
+   "gate_power": 2.0
+  },
+  [
+   2.3114,
+   0.9232,
+   11.7809,
+   11.7209
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.3,
+   "lms_taps": 2,
+   "gate_threshold": 0.3,
+   "gate_power": 2.0
+  },
+  [
+   2.3038,
+   0.922,
+   11.5437,
+   11.4983
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.3,
+   "lms_taps": 4,
+   "gate_threshold": null,
+   "gate_power": 2.0
+  },
+  [
+   2.2869,
+   0.9207,
+   11.3538,
+   11.3202
+  ]
+ ],
+ [
+  {
+   "use_lms": true,
+   "spp_gate": true,
+   "lms_mu": 0.3,
+   "lms_taps": 2,
+   "gate_threshold": null,
+   "gate_power": 2.0
+  },
+  [
+   2.2489,
+   0.9178,
+   10.9137,
+   10.8771
+  ]
+ ],
+ [
+  {
+   "use_lms": false
+  },
+  [
+   2.0856,
+   0.9015,
+   12.0877,
+   12.2029
+  ]
+ ]
+]

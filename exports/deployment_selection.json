@@ -1,0 +1,36 @@
+{
+ "HQ": {
+  "onnx": "exports/dancnet_v3hq_cont.onnx",
+  "checkpoint": "checkpoints/v3hq_cont/best.pt",
+  "mode": "high quality, 2-frame look-ahead (DANCNet-v3, 609 K)",
+  "decision": "reports/results/v3hq_cont_decision.md",
+  "reference_systems": {
+   "dualmic_v1": "hybrid:v3hq_cont",
+   "defence_v1": "dancnet:v3hq_cont"
+  }
+ },
+ "LL": {
+  "onnx": "exports/dancnet_ll.onnx",
+  "checkpoint": "checkpoints/ll/best.pt",
+  "mode": "low latency, no look-ahead",
+  "decision": "reports/results/finetune_decision_ll.md",
+  "reference_systems": {
+   "dualmic_v1": "hybrid:ll",
+   "defence_v1": "dancnet:ll"
+  }
+ },
+ "TWO_MIC": {
+  "onnx": "exports/dancnet_v3_2mic.onnx",
+  "checkpoint": "checkpoints/v3_2mic/best.pt",
+  "mode": "two-microphone headsets: gated NLMS -> two-microphone DANCNet-v3 (cascade), 2-frame look-ahead; single-mic HQ model in hot standby for a dead reference mic",
+  "decision": "reports/results/cascade_decision.md",
+  "engine": {
+   "lms_two_mic": true
+  },
+  "fallback": "HQ",
+  "launch": "danc_live.py --onnx exports/dancnet_v3_2mic.onnx --two-mic-cascade --fallback-onnx exports/dancnet_v3hq_cont.onnx",
+  "reference_systems": {
+   "dualmic_v1": "hybrid2:v3_2mic"
+  }
+ }
+}

@@ -1,0 +1,23 @@
+# systemd unit for the D-ANC real-time engine (NOT VERIFIED ON HARDWARE IN THIS PROJECT)
+# Install: sudo cp danc.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now danc
+[Unit]
+Description=D-ANC hybrid noise cancellation engine
+After=sound.target
+
+[Service]
+Type=simple
+User=danc
+WorkingDirectory=/opt/danc
+Environment=PYTHONUNBUFFERED=1
+Environment=OMP_NUM_THREADS=1
+ExecStart=/opt/danc/.venv/bin/python -m danc.inference.realtime --onnx /opt/danc/exports/dancnet_v3hq_cont.onnx --in-device USB --out-device USB --log /var/log/danc/engine.jsonl
+CPUSchedulingPolicy=fifo
+CPUSchedulingPriority=80
+CPUAffinity=10 11
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

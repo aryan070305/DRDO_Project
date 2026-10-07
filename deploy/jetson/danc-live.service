@@ -1,0 +1,47 @@
+# systemd unit for the D-ANC real-time engine via the torch-free launcher (deploy/jetson/danc_live.py).
+# NOT VERIFIED ON HARDWARE IN THIS PROJECT.
+#
+# Use this unit instead of danc.service on a torch-free Jetson install: danc.service starts
+# "python -m danc.inference.realtime", which imports torch (via danc.inference.runners) and therefore fails
+# when PyTorch is not installed.  It also pins CPUs 10,11, which are offline in the 15 W / 30 W nvpmodel
+# modes; this unit lets the launcher pick the last two ONLINE CPUs (--cpus auto).
+#
+# Install (see QUICKSTART.md, step 12):
+#   sudo useradd --system --home /opt/danc --shell /usr/sbin/nologin --groups audio danc   # once
+#   sudo cp /opt/danc/deploy/jetson/danc-live.service /etc/systemd/system/danc-live.service
+#   sudoedit /etc/default/danc            # optional overrides, e.g. DANC_ONNX=/opt/danc/exports/dancnet_ll.onnx
+#   sudo systemctl daemon-reload && sudo systemctl enable --now danc-live
+#   journalctl -u danc-live -f            # live JSON stats every 5 s
+[Unit]
+Description=D-ANC hybrid noise cancellation engine (torch-free launcher)
+After=sound.target
+Wants=sound.target
+# keep retrying forever (e.g. the USB interface is plugged in after boot); the default start limit would give up
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=danc
+Group=audio
+SupplementaryGroups=audio
+WorkingDirectory=/opt/danc
+Environment=PYTHONUNBUFFERED=1
+Environment=OMP_NUM_THREADS=1
+# Defaults; override any of them in /etc/default/danc (read after these lines, so it wins)
+Environment=DANC_ONNX=/opt/danc/exports/dancnet_v3hq_cont.onnx
+Environment=DANC_IN_DEVICE=USB
+Environment=DANC_OUT_DEVICE=USB
+Environment=DANC_CPUS=auto
+Environment=DANC_EXTRA_ARGS=
+EnvironmentFile=-/etc/default/danc
+LogsDirectory=danc
+ExecStart=/opt/danc/.venv/bin/python /opt/danc/deploy/jetson/danc_live.py --onnx ${DANC_ONNX} --in-device ${DANC_IN_DEVICE} --out-device ${DANC_OUT_DEVICE} --cpus ${DANC_CPUS} --log /var/log/danc/engine.jsonl $DANC_EXTRA_ARGS
+CPUSchedulingPolicy=fifo
+CPUSchedulingPriority=80
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

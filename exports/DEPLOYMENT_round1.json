@@ -1,0 +1,166 @@
+{
+ "deployed": {
+  "HQ": {
+   "onnx": "exports/dancnet_hqft.onnx",
+   "checkpoint": "checkpoints/hq_metric/last.pt",
+   "mode": "high quality, 2-frame look-ahead",
+   "decision": "reports/results/finetune_decision_hq.md",
+   "metadata": {
+    "fs": "16000",
+    "n_fft": "320",
+    "hop": "160",
+    "win": "320",
+    "lookahead": "2",
+    "algorithmic_latency_ms": "40.0",
+    "model_cfg": "{\"n_bins\": 161, \"n_low\": 64, \"n_erb\": 32, \"fs\": 16000, \"n_fft\": 320, \"c1\": 20, \"c2\": 40, \"c\": 80, \"n_dp\": 3, \"df_order\": 5, \"norm_win\": 64, \"compress\": 0.3, \"feat_clamp\": 10.0, \"df_bound\": 1.5, \"lookahead\": 2}"
+   },
+   "inputs": {
+    "spec": [
+     1,
+     1,
+     161,
+     2
+    ],
+    "state_in_0": [
+     1,
+     63
+    ],
+    "state_in_1": [
+     1,
+     20,
+     1,
+     48
+    ],
+    "state_in_2": [
+     1,
+     40,
+     1,
+     24
+    ],
+    "state_in_3": [
+     1,
+     160,
+     1,
+     24
+    ],
+    "state_in_4": [
+     1,
+     4,
+     161,
+     2
+    ],
+    "state_in_5": [
+     1,
+     24,
+     80
+    ],
+    "state_in_6": [
+     1,
+     24,
+     80
+    ],
+    "state_in_7": [
+     1,
+     24,
+     80
+    ]
+   },
+   "outputs": [
+    "spec_out",
+    "spp",
+    "state_out_0",
+    "state_out_1",
+    "state_out_2",
+    "state_out_3",
+    "state_out_4",
+    "state_out_5",
+    "state_out_6",
+    "state_out_7"
+   ],
+   "sha256_onnx": "13432dee2ca9fbe8df6c490f0454bb19348dca9f23d3bb41c1a15820aba2b6c0",
+   "sha256_checkpoint": "8e593b6b192dcb8fdba70c010a34153d23cab2bd7423d630ec3fac5083b6d3f5"
+  },
+  "LL": {
+   "onnx": "exports/dancnet_ll.onnx",
+   "checkpoint": "checkpoints/ll/best.pt",
+   "mode": "low latency, no look-ahead",
+   "decision": "reports/results/finetune_decision_ll.md",
+   "metadata": {
+    "fs": "16000",
+    "n_fft": "320",
+    "hop": "160",
+    "win": "320",
+    "lookahead": "0",
+    "algorithmic_latency_ms": "20.0",
+    "model_cfg": "{\"n_bins\": 161, \"n_low\": 64, \"n_erb\": 32, \"fs\": 16000, \"n_fft\": 320, \"c1\": 20, \"c2\": 40, \"c\": 80, \"n_dp\": 3, \"df_order\": 5, \"norm_win\": 64, \"compress\": 0.3, \"feat_clamp\": 10.0, \"df_bound\": 1.5, \"lookahead\": 0}"
+   },
+   "inputs": {
+    "spec": [
+     1,
+     1,
+     161,
+     2
+    ],
+    "state_in_0": [
+     1,
+     63
+    ],
+    "state_in_1": [
+     1,
+     20,
+     1,
+     48
+    ],
+    "state_in_2": [
+     1,
+     40,
+     1,
+     24
+    ],
+    "state_in_3": [
+     1,
+     160,
+     1,
+     24
+    ],
+    "state_in_4": [
+     1,
+     4,
+     64,
+     2
+    ],
+    "state_in_5": [
+     1,
+     24,
+     80
+    ],
+    "state_in_6": [
+     1,
+     24,
+     80
+    ],
+    "state_in_7": [
+     1,
+     24,
+     80
+    ]
+   },
+   "outputs": [
+    "spec_out",
+    "spp",
+    "state_out_0",
+    "state_out_1",
+    "state_out_2",
+    "state_out_3",
+    "state_out_4",
+    "state_out_5",
+    "state_out_6",
+    "state_out_7"
+   ],
+   "sha256_onnx": "215c65edd954850b80295dfc17e5daf7db7552f8f611f33b019335020f79bb2a",
+   "sha256_checkpoint": "774d8d31bda8e73eb0728697762e3cb5d6d4d58e0dd83844d22e2b1864b0ac04"
+  }
+ },
+ "hybrid_engine_defaults": "danc.inference.engine.EngineConfig (lms_mu=0.1, lms_taps=2, gate_power=4.0, limiter -1 dBFS) - coupling tuned on data/testsets/dualmic_val",
+ "stft": "16 kHz, 20 ms sqrt-Hann window, 10 ms hop, n_fft 320 (danc.dsp.DEFAULT)"
+}

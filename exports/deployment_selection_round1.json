@@ -1,0 +1,14 @@
+{
+ "HQ": {
+  "onnx": "exports/dancnet_hqft.onnx",
+  "checkpoint": "checkpoints/hq_metric/last.pt",
+  "mode": "high quality, 2-frame look-ahead",
+  "decision": "reports/results/finetune_decision_hq.md"
+ },
+ "LL": {
+  "onnx": "exports/dancnet_ll.onnx",
+  "checkpoint": "checkpoints/ll/best.pt",
+  "mode": "low latency, no look-ahead",
+  "decision": "reports/results/finetune_decision_ll.md"
+ }
+}

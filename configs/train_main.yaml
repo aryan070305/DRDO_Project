@@ -1,0 +1,19 @@
+# Main DANCNet training run (Apple M4 / MPS).  See reports/REPORT.md section 4 for rationale.
+name: main
+seed: 7
+segment_s: 4.0            # 4 s crops, 401 frames
+batch_size: 16
+lr: 0.001                 # AdamW, cosine decay after linear warm-up
+lr_min: 0.00002
+warmup_steps: 500
+max_steps: 18000
+max_hours: 4.25           # wall-clock cap for this machine
+grad_clip: 5.0
+weight_decay: 0.0001
+workers: 6
+log_every: 100
+val_every: 2000
+val_n: 200                # 4 categories x 5 SNRs x 10, held-out speakers
+use_synth: true
+model: {}                 # DANCNetConfig defaults: 164k params, 3.67 MMAC/frame
+loss: {w_spec: 1.0, w_mr: 1.0, w_sisdr: 1.0, w_pmsqe: 1.0, w_asym: 0.5, w_spp: 0.1}

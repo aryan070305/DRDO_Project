@@ -1,0 +1,4776 @@
+<title>D-ANC Hybrid Noise Cancellation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* Layout: technical report. Sticky section rail + one reading column; data blocks may run wider. */
+:root{
+  --paper:#f6f7f5; --panel:#ffffff; --ink:#1b2228; --muted:#59656c; --rule:#d3d9d6;
+  --accent:#23697a; --accent-soft:#e3eff1; --pass:#2c7a4c; --pass-bg:#e4f2e9; --fail:#a8382c; --fail-bg:#f8e7e4;
+  --code:#edf0ee; --plate:#ffffff;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#11161a; --panel:#171e23; --ink:#e2e7e9; --muted:#9aa6ac; --rule:#2b343a;
+  --accent:#71b7c7; --accent-soft:#1c2c31; --pass:#63b985; --pass-bg:#16281e; --fail:#e47468; --fail-bg:#2e1a18;
+  --code:#1b2328; --plate:#ffffff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#11161a; --panel:#171e23; --ink:#e2e7e9; --muted:#9aa6ac; --rule:#2b343a;
+  --accent:#71b7c7; --accent-soft:#1c2c31; --pass:#63b985; --pass-bg:#16281e; --fail:#e47468; --fail-bg:#2e1a18;
+  --code:#1b2328; --plate:#ffffff; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:16px/1.62 var(--f-body);padding-inline:16px;padding-block:0 64px}
+.shell{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:230px minmax(0,1fr);gap:48px}
+nav.rail{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;max-height:100vh;overflow:auto;padding-block:32px;font-size:13.5px}
+nav.rail .t{font:600 12px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+nav.rail ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+nav.rail a{display:block;padding:4px 8px;border-radius:4px;color:var(--ink);text-decoration:none}
+nav.rail a:hover,nav.rail a:focus-visible{background:var(--accent-soft);color:var(--accent);outline:none}
+main{min-width:0;padding-block:32px}
+header.hero{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:28px;display:grid;gap:10px}
+.eyebrow{font:600 12px/1.3 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+h1{font:600 clamp(30px,4.6vw,46px)/1.08 var(--f-display);letter-spacing:-.01em;margin:0;text-wrap:balance}
+.sub{color:var(--muted);max-width:68ch;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font:13px/1.4 var(--f-mono);color:var(--muted)}
+.meta b{color:var(--ink);font-weight:600}
+section.summary{display:grid;gap:14px;margin-bottom:40px}
+section.summary h2{margin-top:0;border-top:0;padding-top:0}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted)}
+.chip{display:inline-flex;align-items:baseline;gap:4px;font:12.5px/1.25 var(--f-mono);padding:2px 6px;border-radius:3px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.chip b{font-weight:600;font-size:11px;letter-spacing:.04em}
+.chip.pass{background:var(--pass-bg);color:var(--pass)}
+.chip.fail{background:var(--fail-bg);color:var(--fail)}
+.matrix td{vertical-align:top}
+.matrix td .chip{display:flex;margin-bottom:3px}
+.matrix td.m3{box-shadow:inset 0 3px 0 var(--pass)}
+.matrix td.na{color:var(--muted);font-size:12px}
+.matrix th .rl{display:block;font:600 14px/1.2 var(--f-display)}
+.matrix th .rk{display:block;font:12px/1.3 var(--f-mono);color:var(--muted)}
+h2{font:600 26px/1.2 var(--f-display);margin:56px 0 12px;padding-top:12px;border-top:1px solid var(--rule);text-wrap:balance}
+h3{font:600 20px/1.25 var(--f-display);margin:34px 0 8px;text-wrap:balance}
+h4{font:600 15px/1.3 var(--f-body);margin:26px 0 8px;color:var(--ink)}
+.prose p,.prose li{max-width:76ch}
+.prose a{color:var(--accent)}
+.prose code{font:0.88em var(--f-mono);background:var(--code);padding:1px 4px;border-radius:3px}
+.prose pre{background:var(--code);padding:14px 16px;border-radius:4px;overflow-x:auto;font:13px/1.5 var(--f-mono)}
+.prose pre code{background:none;padding:0}
+.prose blockquote{margin:16px 0;padding:10px 16px;border-left:3px solid var(--accent);background:var(--accent-soft)}
+.tablewrap{overflow-x:auto;margin:14px 0 18px;border:1px solid var(--rule);border-radius:4px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+thead th{font:600 12px/1.3 var(--f-mono);letter-spacing:.03em;color:var(--muted);background:var(--code);position:sticky;top:0}
+tbody tr:last-child td,tbody tr:last-child th{border-bottom:0}
+td strong,th strong{color:var(--accent)}
+figure,.prose p>img{display:block}
+.prose img{background:var(--plate);padding:8px;border:1px solid var(--rule);border-radius:4px;margin:12px 0}
+.fig-caption{font-size:13.5px;color:var(--muted)}
+.foot{margin-top:56px;padding-top:16px;border-top:1px solid var(--rule);font:13px/1.5 var(--f-mono);color:var(--muted)}
+details.mnav{display:none}
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+  nav.rail{display:none}
+  details.mnav{display:block;position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--paper);border-bottom:1px solid var(--rule);padding-block:10px;margin-inline:-16px;padding-inline:16px}
+  details.mnav summary{cursor:pointer;font:600 13px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+  details.mnav ol{list-style:none;padding:8px 0 0;margin:0;display:grid;gap:4px;font-size:14px}
+  details.mnav a{color:var(--ink);text-decoration:none}
+  h2{font-size:22px}
+}
+@media (prefers-reduced-motion:no-preference){nav.rail a{transition:background .15s,color .15s}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+<div class="shell">
+<nav class="rail" aria-label="Sections"><div class="t">Sections</div><ol><li><a href="#compliance">Target compliance</a></li><li><a href="#0-executive-summary">0. Executive summary</a></li><li><a href="#1-problem-framing-and-how-the-targets-are-interpreted">1. Problem framing and how the targets are interpreted</a></li><li><a href="#2-state-of-the-art-and-the-architecture-decision">2. State of the art and the architecture decision</a></li><li><a href="#3-component-1-scalable-dataset-pipeline">3. Component 1: Scalable dataset pipeline</a></li><li><a href="#4-component-2-model-architecture-dancnet">4. Component 2: Model architecture (DANCNet)</a></li><li><a href="#5-component-3-training-framework">5. Component 3: Training framework</a></li><li><a href="#6-component-4-real-time-inference-engine">6. Component 4: Real-time inference engine</a></li><li><a href="#7-component-5-prototype-setup">7. Component 5: Prototype setup</a></li><li><a href="#8-results">8. Results</a></li><li><a href="#9-risks-and-mitigations">9. Risks and mitigations</a></li><li><a href="#10-reproducibility">10. Reproducibility</a></li><li><a href="#11-references-all-verified-unless-marked">11. References (all verified unless marked)</a></li></ol></nav>
+<main>
+<details class="mnav"><summary>Sections</summary><ol><li><a href="#compliance">Target compliance</a></li><li><a href="#0-executive-summary">0. Executive summary</a></li><li><a href="#1-problem-framing-and-how-the-targets-are-interpreted">1. Problem framing and how the targets are interpreted</a></li><li><a href="#2-state-of-the-art-and-the-architecture-decision">2. State of the art and the architecture decision</a></li><li><a href="#3-component-1-scalable-dataset-pipeline">3. Component 1: Scalable dataset pipeline</a></li><li><a href="#4-component-2-model-architecture-dancnet">4. Component 2: Model architecture (DANCNet)</a></li><li><a href="#5-component-3-training-framework">5. Component 3: Training framework</a></li><li><a href="#6-component-4-real-time-inference-engine">6. Component 4: Real-time inference engine</a></li><li><a href="#7-component-5-prototype-setup">7. Component 5: Prototype setup</a></li><li><a href="#8-results">8. Results</a></li><li><a href="#9-risks-and-mitigations">9. Risks and mitigations</a></li><li><a href="#10-reproducibility">10. Reproducibility</a></li><li><a href="#11-references-all-verified-unless-marked">11. References (all verified unless marked)</a></li></ol></details>
+<header class="hero">
+  <div class="eyebrow">Technical report · defence voice communications</div>
+  <h1>D-ANC: hybrid AI/ML adaptive noise cancellation</h1>
+  <p class="sub">A reference-microphone sub-band NLMS filter coupled to a causal complex-domain deep-filtering network, built, trained and
+  validated for gunfire, artillery, rotor, drone, vehicle, siren and wind noise, with an edge deployment path to the NVIDIA Jetson AGX Orin.</p>
+  <div class="meta"><span><b>Modes</b> HQ 40 ms · LL 20 ms · two-mic cascade 40 ms</span><span><b>HQ model</b> 609 k params · 1.37 GMAC/s</span>
+  <span><b>Compute</b> 0.67 ms per 10 ms hop, two-mic 1.27 ms (Apple M4, 1 thread)</span><span><b>Date</b> 2026-10-05 (round 2)</span></div>
+</header>
+<section class="summary" id="compliance">
+  <h2>Target compliance by input SNR</h2>
+  <p class="sub">Each cell shows the mean over the test files at that input SNR, with target SNR &gt; 15 dB, STOI &gt; 0.85 and PESQ-WB &gt; 2.5.
+  Green meets the target, red misses it; a bar on top marks cells where all three are met. Single-mic rows use the 900-file defence test set,
+  two-microphone rows the 240-scene dual-microphone set, which covers −5…10 dB. Computed directly from the per-file results.</p>
+  <div class="tablewrap matrix"><table><thead><tr><th scope="col">Model · input SNR</th><th scope="col">-10 dB</th><th scope="col">-5 dB</th><th scope="col">+0 dB</th><th scope="col">+5 dB</th><th scope="col">+10 dB</th><th scope="col">+15 dB</th></tr></thead><tbody><tr><th scope="row"><span class="rl">HQ · 40 ms</span><span class="rk">1 mic, deployed (round 2)</span></th><td class="m0"><span class="chip fail" title="SNR 6.4 dB (target &gt; 15)"><b>SNR</b> 6.4</span><span class="chip fail" title="STOI 0.755 (target &gt; 0.85)"><b>STOI</b> 0.755</span><span class="chip fail" title="PESQ 1.53 (target &gt; 2.5)"><b>PESQ</b> 1.53</span></td><td class="m0"><span class="chip fail" title="SNR 8.8 dB (target &gt; 15)"><b>SNR</b> 8.8</span><span class="chip fail" title="STOI 0.835 (target &gt; 0.85)"><b>STOI</b> 0.835</span><span class="chip fail" title="PESQ 1.77 (target &gt; 2.5)"><b>PESQ</b> 1.77</span></td><td class="m1"><span class="chip fail" title="SNR 11.3 dB (target &gt; 15)"><b>SNR</b> 11.3</span><span class="chip pass" title="STOI 0.889 (target &gt; 0.85)"><b>STOI</b> 0.889</span><span class="chip fail" title="PESQ 2.08 (target &gt; 2.5)"><b>PESQ</b> 2.08</span></td><td class="m2"><span class="chip fail" title="SNR 14.7 dB (target &gt; 15)"><b>SNR</b> 14.7</span><span class="chip pass" title="STOI 0.937 (target &gt; 0.85)"><b>STOI</b> 0.937</span><span class="chip pass" title="PESQ 2.52 (target &gt; 2.5)"><b>PESQ</b> 2.52</span></td><td class="m3"><span class="chip pass" title="SNR 16.8 dB (target &gt; 15)"><b>SNR</b> 16.8</span><span class="chip pass" title="STOI 0.953 (target &gt; 0.85)"><b>STOI</b> 0.953</span><span class="chip pass" title="PESQ 2.92 (target &gt; 2.5)"><b>PESQ</b> 2.92</span></td><td class="m3"><span class="chip pass" title="SNR 19.9 dB (target &gt; 15)"><b>SNR</b> 19.9</span><span class="chip pass" title="STOI 0.975 (target &gt; 0.85)"><b>STOI</b> 0.975</span><span class="chip pass" title="PESQ 3.27 (target &gt; 2.5)"><b>PESQ</b> 3.27</span></td></tr><tr><th scope="row"><span class="rl">LL · 20 ms</span><span class="rk">1 mic, deployed</span></th><td class="m0"><span class="chip fail" title="SNR 5.4 dB (target &gt; 15)"><b>SNR</b> 5.4</span><span class="chip fail" title="STOI 0.724 (target &gt; 0.85)"><b>STOI</b> 0.724</span><span class="chip fail" title="PESQ 1.42 (target &gt; 2.5)"><b>PESQ</b> 1.42</span></td><td class="m0"><span class="chip fail" title="SNR 7.8 dB (target &gt; 15)"><b>SNR</b> 7.8</span><span class="chip fail" title="STOI 0.808 (target &gt; 0.85)"><b>STOI</b> 0.808</span><span class="chip fail" title="PESQ 1.63 (target &gt; 2.5)"><b>PESQ</b> 1.63</span></td><td class="m1"><span class="chip fail" title="SNR 10.2 dB (target &gt; 15)"><b>SNR</b> 10.2</span><span class="chip pass" title="STOI 0.870 (target &gt; 0.85)"><b>STOI</b> 0.870</span><span class="chip fail" title="PESQ 1.88 (target &gt; 2.5)"><b>PESQ</b> 1.88</span></td><td class="m1"><span class="chip fail" title="SNR 13.4 dB (target &gt; 15)"><b>SNR</b> 13.4</span><span class="chip pass" title="STOI 0.924 (target &gt; 0.85)"><b>STOI</b> 0.924</span><span class="chip fail" title="PESQ 2.29 (target &gt; 2.5)"><b>PESQ</b> 2.29</span></td><td class="m3"><span class="chip pass" title="SNR 15.6 dB (target &gt; 15)"><b>SNR</b> 15.6</span><span class="chip pass" title="STOI 0.946 (target &gt; 0.85)"><b>STOI</b> 0.946</span><span class="chip pass" title="PESQ 2.72 (target &gt; 2.5)"><b>PESQ</b> 2.72</span></td><td class="m3"><span class="chip pass" title="SNR 18.3 dB (target &gt; 15)"><b>SNR</b> 18.3</span><span class="chip pass" title="STOI 0.971 (target &gt; 0.85)"><b>STOI</b> 0.971</span><span class="chip pass" title="PESQ 3.10 (target &gt; 2.5)"><b>PESQ</b> 3.10</span></td></tr><tr><th scope="row"><span class="rl">HQ · 40 ms</span><span class="rk">1 mic, round 1</span></th><td class="m0"><span class="chip fail" title="SNR 5.9 dB (target &gt; 15)"><b>SNR</b> 5.9</span><span class="chip fail" title="STOI 0.747 (target &gt; 0.85)"><b>STOI</b> 0.747</span><span class="chip fail" title="PESQ 1.50 (target &gt; 2.5)"><b>PESQ</b> 1.50</span></td><td class="m0"><span class="chip fail" title="SNR 8.4 dB (target &gt; 15)"><b>SNR</b> 8.4</span><span class="chip fail" title="STOI 0.827 (target &gt; 0.85)"><b>STOI</b> 0.827</span><span class="chip fail" title="PESQ 1.71 (target &gt; 2.5)"><b>PESQ</b> 1.71</span></td><td class="m1"><span class="chip fail" title="SNR 10.9 dB (target &gt; 15)"><b>SNR</b> 10.9</span><span class="chip pass" title="STOI 0.883 (target &gt; 0.85)"><b>STOI</b> 0.883</span><span class="chip fail" title="PESQ 2.01 (target &gt; 2.5)"><b>PESQ</b> 2.01</span></td><td class="m1"><span class="chip fail" title="SNR 14.2 dB (target &gt; 15)"><b>SNR</b> 14.2</span><span class="chip pass" title="STOI 0.933 (target &gt; 0.85)"><b>STOI</b> 0.933</span><span class="chip fail" title="PESQ 2.44 (target &gt; 2.5)"><b>PESQ</b> 2.44</span></td><td class="m3"><span class="chip pass" title="SNR 16.5 dB (target &gt; 15)"><b>SNR</b> 16.5</span><span class="chip pass" title="STOI 0.951 (target &gt; 0.85)"><b>STOI</b> 0.951</span><span class="chip pass" title="PESQ 2.85 (target &gt; 2.5)"><b>PESQ</b> 2.85</span></td><td class="m3"><span class="chip pass" title="SNR 19.5 dB (target &gt; 15)"><b>SNR</b> 19.5</span><span class="chip pass" title="STOI 0.974 (target &gt; 0.85)"><b>STOI</b> 0.974</span><span class="chip pass" title="PESQ 3.19 (target &gt; 2.5)"><b>PESQ</b> 3.19</span></td></tr><tr><th scope="row"><span class="rl">Two-mic cascade · 40 ms</span><span class="rk">2 mics, deployed (round 2)</span></th><td class="na">not tested</td><td class="m1"><span class="chip fail" title="SNR 10.5 dB (target &gt; 15)"><b>SNR</b> 10.5</span><span class="chip pass" title="STOI 0.878 (target &gt; 0.85)"><b>STOI</b> 0.878</span><span class="chip fail" title="PESQ 1.90 (target &gt; 2.5)"><b>PESQ</b> 1.90</span></td><td class="m1"><span class="chip fail" title="SNR 13.3 dB (target &gt; 15)"><b>SNR</b> 13.3</span><span class="chip pass" title="STOI 0.925 (target &gt; 0.85)"><b>STOI</b> 0.925</span><span class="chip fail" title="PESQ 2.48 (target &gt; 2.5)"><b>PESQ</b> 2.48</span></td><td class="m2"><span class="chip fail" title="SNR 14.5 dB (target &gt; 15)"><b>SNR</b> 14.5</span><span class="chip pass" title="STOI 0.954 (target &gt; 0.85)"><b>STOI</b> 0.954</span><span class="chip pass" title="PESQ 2.79 (target &gt; 2.5)"><b>PESQ</b> 2.79</span></td><td class="m3"><span class="chip pass" title="SNR 16.3 dB (target &gt; 15)"><b>SNR</b> 16.3</span><span class="chip pass" title="STOI 0.967 (target &gt; 0.85)"><b>STOI</b> 0.967</span><span class="chip pass" title="PESQ 3.29 (target &gt; 2.5)"><b>PESQ</b> 3.29</span></td><td class="na">not tested</td></tr><tr><th scope="row"><span class="rl">HQ · 40 ms</span><span class="rk">2 mic hybrid</span></th><td class="na">not tested</td><td class="m1"><span class="chip fail" title="SNR 10.4 dB (target &gt; 15)"><b>SNR</b> 10.4</span><span class="chip pass" title="STOI 0.884 (target &gt; 0.85)"><b>STOI</b> 0.884</span><span class="chip fail" title="PESQ 1.93 (target &gt; 2.5)"><b>PESQ</b> 1.93</span></td><td class="m1"><span class="chip fail" title="SNR 12.9 dB (target &gt; 15)"><b>SNR</b> 12.9</span><span class="chip pass" title="STOI 0.925 (target &gt; 0.85)"><b>STOI</b> 0.925</span><span class="chip fail" title="PESQ 2.35 (target &gt; 2.5)"><b>PESQ</b> 2.35</span></td><td class="m2"><span class="chip fail" title="SNR 14.4 dB (target &gt; 15)"><b>SNR</b> 14.4</span><span class="chip pass" title="STOI 0.953 (target &gt; 0.85)"><b>STOI</b> 0.953</span><span class="chip pass" title="PESQ 2.63 (target &gt; 2.5)"><b>PESQ</b> 2.63</span></td><td class="m3"><span class="chip pass" title="SNR 16.4 dB (target &gt; 15)"><b>SNR</b> 16.4</span><span class="chip pass" title="STOI 0.966 (target &gt; 0.85)"><b>STOI</b> 0.966</span><span class="chip pass" title="PESQ 3.08 (target &gt; 2.5)"><b>PESQ</b> 3.08</span></td><td class="na">not tested</td></tr><tr><th scope="row"><span class="rl">LL · 20 ms</span><span class="rk">2 mic hybrid</span></th><td class="na">not tested</td><td class="m1"><span class="chip fail" title="SNR 9.6 dB (target &gt; 15)"><b>SNR</b> 9.6</span><span class="chip pass" title="STOI 0.865 (target &gt; 0.85)"><b>STOI</b> 0.865</span><span class="chip fail" title="PESQ 1.77 (target &gt; 2.5)"><b>PESQ</b> 1.77</span></td><td class="m1"><span class="chip fail" title="SNR 12.5 dB (target &gt; 15)"><b>SNR</b> 12.5</span><span class="chip pass" title="STOI 0.916 (target &gt; 0.85)"><b>STOI</b> 0.916</span><span class="chip fail" title="PESQ 2.23 (target &gt; 2.5)"><b>PESQ</b> 2.23</span></td><td class="m2"><span class="chip fail" title="SNR 14.6 dB (target &gt; 15)"><b>SNR</b> 14.6</span><span class="chip pass" title="STOI 0.948 (target &gt; 0.85)"><b>STOI</b> 0.948</span><span class="chip pass" title="PESQ 2.52 (target &gt; 2.5)"><b>PESQ</b> 2.52</span></td><td class="m3"><span class="chip pass" title="SNR 17.0 dB (target &gt; 15)"><b>SNR</b> 17.0</span><span class="chip pass" title="STOI 0.963 (target &gt; 0.85)"><b>STOI</b> 0.963</span><span class="chip pass" title="PESQ 2.98 (target &gt; 2.5)"><b>PESQ</b> 2.98</span></td><td class="na">not tested</td></tr><tr><th scope="row"><span class="rl">DeepFilterNet3</span><span class="rk">1 mic, reference</span></th><td class="m0"><span class="chip fail" title="SNR 4.7 dB (target &gt; 15)"><b>SNR</b> 4.7</span><span class="chip fail" title="STOI 0.662 (target &gt; 0.85)"><b>STOI</b> 0.662</span><span class="chip fail" title="PESQ 1.30 (target &gt; 2.5)"><b>PESQ</b> 1.30</span></td><td class="m0"><span class="chip fail" title="SNR 6.9 dB (target &gt; 15)"><b>SNR</b> 6.9</span><span class="chip fail" title="STOI 0.772 (target &gt; 0.85)"><b>STOI</b> 0.772</span><span class="chip fail" title="PESQ 1.48 (target &gt; 2.5)"><b>PESQ</b> 1.48</span></td><td class="m0"><span class="chip fail" title="SNR 9.3 dB (target &gt; 15)"><b>SNR</b> 9.3</span><span class="chip fail" title="STOI 0.847 (target &gt; 0.85)"><b>STOI</b> 0.847</span><span class="chip fail" title="PESQ 1.71 (target &gt; 2.5)"><b>PESQ</b> 1.71</span></td><td class="m1"><span class="chip fail" title="SNR 12.2 dB (target &gt; 15)"><b>SNR</b> 12.2</span><span class="chip pass" title="STOI 0.910 (target &gt; 0.85)"><b>STOI</b> 0.910</span><span class="chip fail" title="PESQ 2.02 (target &gt; 2.5)"><b>PESQ</b> 2.02</span></td><td class="m1"><span class="chip fail" title="SNR 14.2 dB (target &gt; 15)"><b>SNR</b> 14.2</span><span class="chip pass" title="STOI 0.936 (target &gt; 0.85)"><b>STOI</b> 0.936</span><span class="chip fail" title="PESQ 2.33 (target &gt; 2.5)"><b>PESQ</b> 2.33</span></td><td class="m3"><span class="chip pass" title="SNR 16.5 dB (target &gt; 15)"><b>SNR</b> 16.5</span><span class="chip pass" title="STOI 0.962 (target &gt; 0.85)"><b>STOI</b> 0.962</span><span class="chip pass" title="PESQ 2.68 (target &gt; 2.5)"><b>PESQ</b> 2.68</span></td></tr></tbody></table></div>
+  <div class="legend"><span><span class="chip pass"><b>STOI</b> 0.951</span> meets target</span><span><span class="chip fail"><b>PESQ</b> 2.01</span> below target</span></div>
+</section>
+<article class="prose"><h2 id="0-executive-summary">0. Executive summary</h2>
+<p><strong>What was built (round 1, 2026-10-03/04).</strong> D-ANC is a complete, tested, real-time hybrid noise-cancellation system for defence voice. It consists of:
+- a reproducible data pipeline: public corpora with SHA-256 provenance, and 13 physics-based generators for gunfire, artillery, rotor, drone, siren and wind noise;
+- DANCNet, a causal complex-domain sub-band/full-band network with a deep filter;
+- a reference-microphone sub-band NLMS coupled to the network through its speech-presence output;
+- a training framework with compressed spectral, MR-STFT, SI-SDR and PMSQE perceptual losses;
+- a streaming ONNX engine numerically equivalent to the trained model;
+- a Jetson AGX Orin deployment kit.</p>
+<p><strong>What round 2 added (2026-10-04/05).</strong>
+- <strong>Training on the M4 GPU:</strong> 10 training runs, 21.8 h of GPU time.
+- <strong>A larger network (v3).</strong> It was then trained further.
+- <strong>A two-microphone network</strong>, run behind the NLMS.
+- <strong>An edge-case test set</strong> of 11 conditions, plus a dual-microphone crew-babble set and a 20/25 dB extension of the defence set.
+- <strong>Controlled ablations:</strong> a reference arm plus five single changes.
+- <strong>Paired confidence intervals</strong> for every key comparison.
+- <strong>A reference-microphone health monitor</strong> with a hot-standby fallback network.
+- <strong>A deployment self-check that covers all three deployed configurations.</strong>
+- <strong>Pre-registered decision rules:</strong> every model change was adopted or rejected under a rule written before its test result existed (§8.10). For the cascade, the <em>idea</em> came from the test result of the plain two-mic network; this is disclosed in its rule. Its configuration was fixed and checked on validation scenes before its single test run.</p>
+<p><strong>Deployed after round 2</strong> (all numbers measured on held-out speakers and test-only noise <strong>[M]</strong>):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Defence test set, 1 mic, input SNR −5…15 dB (800 files)</th>
+<th>PESQ-WB</th>
+<th>PESQ-NB</th>
+<th>STOI</th>
+<th>output SNR</th>
+<th>SI-SDR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Noisy input</td>
+<td>1.34</td>
+<td>1.94</td>
+<td>0.815</td>
+<td>3.8 dB</td>
+<td>3.8 dB</td>
+</tr>
+<tr>
+<td>Best classical method (log-MMSE)</td>
+<td>1.44</td>
+<td>2.09</td>
+<td>0.798</td>
+<td>5.9 dB</td>
+<td>5.1 dB</td>
+</tr>
+<tr>
+<td>DeepFilterNet3, public causal reference model (40 ms)</td>
+<td>2.04</td>
+<td>2.75</td>
+<td>0.885</td>
+<td>11.8 dB</td>
+<td>11.7 dB</td>
+</tr>
+<tr>
+<td>D-ANC LL, 20 ms (deployed, unchanged)</td>
+<td>2.33</td>
+<td>2.98</td>
+<td>0.904</td>
+<td>13.0 dB</td>
+<td>13.3 dB</td>
+</tr>
+<tr>
+<td>D-ANC HQ round 1, 40 ms</td>
+<td>2.44</td>
+<td>3.10</td>
+<td>0.914</td>
+<td>13.9 dB</td>
+<td>14.0 dB</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ round 2, 40 ms (deployed)</strong></td>
+<td><strong>2.51</strong></td>
+<td><strong>3.17</strong></td>
+<td><strong>0.918</strong></td>
+<td><strong>14.3 dB</strong></td>
+<td><strong>14.3 dB</strong></td>
+</tr>
+</tbody>
+</table></div>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Dual-mic headset scenes, primary + reference mic, −5…10 dB (240 scenes)</th>
+<th>PESQ-WB</th>
+<th>PESQ-NB</th>
+<th>STOI</th>
+<th>output SNR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Primary microphone, unprocessed</td>
+<td>1.23</td>
+<td>1.78</td>
+<td>0.798</td>
+<td>2.5 dB</td>
+</tr>
+<tr>
+<td>NLMS only</td>
+<td>1.18</td>
+<td>1.65</td>
+<td>0.788</td>
+<td>3.2 dB</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + DNN, round-1 HQ</td>
+<td>2.43</td>
+<td>3.05</td>
+<td>0.928</td>
+<td>13.4 dB</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + DNN, round-2 HQ</td>
+<td>2.50</td>
+<td>3.12</td>
+<td>0.932</td>
+<td>13.5 dB</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network (deployed for two-mic headsets)</strong></td>
+<td><strong>2.62</strong></td>
+<td><strong>3.20</strong></td>
+<td><strong>0.931</strong></td>
+<td><strong>13.7 dB</strong></td>
+</tr>
+</tbody>
+</table></div>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Crew babble: 2–3 other talkers 0.6–2 m away + vehicle bed (60 dual-mic scenes)</th>
+<th>PESQ-WB</th>
+<th>STOI</th>
+<th>SI-SDR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Primary microphone, unprocessed</td>
+<td>1.12</td>
+<td>0.740</td>
+<td>3.5 dB</td>
+</tr>
+<tr>
+<td>Single-mic round-2 HQ</td>
+<td>1.27</td>
+<td>0.773</td>
+<td>5.6 dB</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + round-2 HQ</td>
+<td>1.37</td>
+<td>0.825</td>
+<td>7.8 dB</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network</strong></td>
+<td><strong>2.06</strong></td>
+<td><strong>0.904</strong></td>
+<td><strong>12.5 dB</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Against the brief's targets</strong> (SNR &gt; 15 dB, STOI &gt; 0.85, PESQ-WB &gt; 2.5):
+- <strong>STOI &gt; 0.85 is met on average</strong> on the main defence and dual-mic test sets (0.918 single-mic, 0.931 with two mics). It is not met on crew babble with one microphone (0.753); with two it is (0.904). Single-mic it holds from 0 dB input. With the two-mic cascade it holds at every tested SNR, including −5 dB (0.878).
+- <strong>PESQ-WB &gt; 2.5 is now met on average, but only just:</strong> 2.51 over −5…15 dB (round 1: 2.44). The 95 % CI is 2.47–2.55, so the mean sits at the threshold. 49 % of files exceed 2.5, and including the −10 dB stress files the average is 2.40. Single-mic it is met from 5 dB input (2.52). With two mics it is met from between 0 and 5 dB (2.48 at 0 dB, 2.79 at 5 dB).
+- <strong>SNR &gt; 15 dB</strong> is met from 10 dB input (16.8 dB single-mic, 16.3 dB two-mic). It is just missed at 5 dB (14.7 dB), so the −5…15 dB average is 14.3 dB.
+- <strong>Not met at −10 to −5 dB</strong>, where the literature also does not meet them (§1).
+- <strong>D-ANC beats DeepFilterNet3,</strong> a strong public causal model (not trained on defence noise). The round-2 HQ model leads by +0.47 PESQ-WB, +0.032 STOI and +2.6 dB SI-SDR on the defence set (DeepFilterNet3 is better on the civilian VoiceBank benchmark, which includes its training speakers; §8.3).</p>
+<p><strong>PESQ "3.25–3.5 in all cases" (round-2 request) and "above 4" (round-1 request): reached only where the input SNR allows it.</strong> These figures were measured, not extrapolated (§8.7, Tables R12a–d), using a 20/25 dB extension of the defence set.
+- The deployed HQ model's <em>mean</em> PESQ-NB reaches 3.25 from 5.3 dB input SNR and 3.5 from 9.1 dB.
+- Its mean PESQ-WB reaches 3.25 from 14.7 dB and 3.5 from 18.6 dB.
+- With the reference microphone, on the dual-mic scenes, the two-mic cascade reaches a mean PESQ-NB of 3.25 from 2.6 dB and PESQ-WB 3.25 from 9.6 dB. On the <em>same</em> scenes the single-mic HQ network needs 7.1 dB for PESQ-NB 3.25. The defence set uses a nominal active-speech SNR about 1.2 dB above its whole-signal SNR, so its thresholds are not directly comparable with the dual-mic ones.
+- At 25 dB input the mean PESQ-NB is <strong>4.08</strong> (PESQ-WB 3.72).
+- At −10 to 0 dB no configuration reaches 3.25 (single-mic PESQ-WB 1.53–2.08). Meeting the request in every case needs more SNR at the microphone, from a noise-cancelling boom mic, an in-ear or throat sensor, or the reference mic (§8.7), not a different algorithm.
+- PESQ is an engineering proxy that ITU-T has marked out of date. MRT listening tests are the acceptance criterion (§7).</p>
+<p><strong>What round 2 measured that matters for fielding.</strong>
+1. <strong>Crew babble</strong> (other crew members talking) was the one edge case where one microphone barely helps (single-mic edge set: STOI 0.725 → 0.753). On the dual-mic crew-babble scenes, the two-mic cascade raises STOI from 0.740 unprocessed to <strong>0.904</strong>. These are simulated headset scenes. For a crewed platform, <strong>two-microphone headsets are the recommendation.</strong>
+2. <strong>The other edge cases are robust:</strong> heavy clipping, −45 dBFS talkers, radio-band speech, post-blast recovery, 400 Hz hum, abrupt noise changes and 60 s streams (§8.6). Far-field reverberant speech is the next weakest case.
+3. <strong>Ablations</strong> (§8.8, 95 % CIs):
+   - Look-ahead (+0.087 PESQ-WB) and the PMSQE perceptual loss (−0.062 without it) are confirmed.
+   - Two round-1 design choices showed <strong>no</strong> measurable benefit: the median normaliser and the deep filter. They are reported as negative results.
+4. <strong>Three bugs were found by testing and an independent code review, and fixed:</strong> two in the deployment path, one in training (§6.3, §10):
+   - a Jetson live-runtime crash after 30 s;
+   - loss of the averaged (EMA) weights on training resume;
+   - a reference monitor that would have flapped in a quiet room.</p>
+<p><strong>Real time.</strong> On one Apple-M4 core, unpaced, the deployed HQ engine takes 0.67 ms mean and 0.75 ms p99.9 per 10 ms hop. The two-mic configuration, with two networks per hop, takes 1.27 ms and 1.41 ms; neither missed a deadline <strong>[M]</strong>. In paced real-time simulation on the Mac desktop (no real-time priority), HQ and LL had no late blocks. The two-mic configuration had 2 late blocks in 11 800, in one run (§8.5): it has the least real-time margin. Jetson AGX Orin latency and power were <strong>not measured</strong>. The deployment kit (<code>deploy/jetson/QUICKSTART.md</code>) gives step-by-step instructions and a self-check (<code>verify_install.py</code>) for doing so on the hardware.</p>
+<p><strong>Main limitations, stated plainly.</strong>
+1. Noise is partly synthetic, and the dual-mic and crew-babble scenes are simulated. Field recordings with the target headset are required (§9, R1).
+2. The models are trained on about 25 h of speech on a fanless laptop. The continuation run still gained +0.03 PESQ-WB, so more data and training would help (R11).
+3. MRT listening tests through the real radio chain remain to be done.
+4. The v3-LL model was better on every metric of the defence test set and VoiceBank+DEMAND, and on clean transparency but missed its pre-registered bar. Switching to it is left as an owner decision (<code>reports/results/v3_decision_ll.md</code>).</p>
+<p><em>The round-1 version of this report is preserved as <code>reports/REPORT_round1.md</code>.</em></p>
+<hr />
+<h2 id="1-problem-framing-and-how-the-targets-are-interpreted">1. Problem framing and how the targets are interpreted</h2>
+<p><strong>What "ANC" means here.</strong> The brief mixes two different technologies.</p>
+<ul>
+<li><em>Acoustic</em> active noise control injects anti-noise into the ear. It needs microphone-to-loudspeaker latency of tens to hundreds of <strong>microseconds</strong>. For example, an open-ear ANC prototype reported a 113 µs median latency, and its noise reduction fell from 11.1 dB at 45 µs to 4.4 dB at 726 µs (Yuan et al., arXiv 2604.05519, Apr 2026, preprint) [V]. That work belongs on the headset's dedicated codec or DSP, not on a Jetson-class SoC.</li>
+<li>What this brief needs is <strong>transmit-path adaptive noise cancellation</strong>, the classic Widrow two-microphone configuration (Proc. IEEE 63(12), 1975) [V], combined with DNN speech enhancement. It cleans the talker's microphone signal before it reaches the radio or intercom, and the listener hears the enhanced speech. Its latency budget is measured in <strong>milliseconds</strong>.</li>
+</ul>
+<p>D-ANC is a transmit-path system. Earcup acoustic ANC is complementary and out of scope (see §7).</p>
+<p><strong>Targets and their exact meaning in this project.</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Target</th>
+<th>Definition used</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SNR &gt; 15 dB</td>
+<td>Output SNR = 10·log10(Σs² / Σ(s−ŝ)²) on the enhanced signal, i.e. non-scale-invariant SDR. ΔSNR and SI-SDR are also reported.</td>
+<td>Penalises residual noise <strong>and</strong> speech distortion. SI-SDR (Le Roux et al., ICASSP 2019) [V] is reported alongside.</td>
+</tr>
+<tr>
+<td>STOI &gt; 0.85</td>
+<td>STOI (Taal et al., IEEE TASLP 19(7), 2011) [V], plus ESTOI (Jensen &amp; Taal, TASLP 24(11), 2016) [V]</td>
+<td>ESTOI is more sensitive to modulated maskers such as rotor and gunfire.</td>
+</tr>
+<tr>
+<td>PESQ &gt; 2.5</td>
+<td><strong>Wideband</strong> PESQ, ITU-T P.862.2 (MOS-LQO range ≈1.04–4.64) [V]. Narrowband P.862 is also reported.</td>
+<td>WB-PESQ is the stricter scale. The narrowband score is closer to an 8 kHz tactical-vocoder channel. ITU-T has marked P.862/P.862.2 out of date and points to P.863 (POLQA) [V], so PESQ is used here as the de-facto research metric the brief requests.</td>
+</tr>
+<tr>
+<td>Latency</td>
+<td>Algorithmic latency (window plus look-ahead), plus measured compute per 10 ms hop, plus I/O buffering</td>
+<td>Two-way comms: ITU-T G.114 calls &lt; 150 ms mouth-to-ear "essentially transparent" for most applications [V]. The DNS Challenge real-time track caps algorithmic latency at 40 ms [V]. The AEC Challenge 2023 used algorithmic + buffering ≤ 20 ms [V].</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>The targets must be read against input SNR.</strong> The literature shows that the targets are reachable near 0 dB input and above, but not at −5 dB with today's causal models:
+- <strong>Tan &amp; Wang 2018, causal CRN</strong> [V]: STOI 76.4 % and PESQ 2.04 at −5 dB on babble/cafeteria noise.
+- <strong>Tan &amp; Wang 2020, GCRN</strong> [V]: STOI 90.1 % and PESQ 2.65 at 0 dB; STOI 80.8 % and PESQ 2.13 at −5 dB.
+- <strong>Xu et al. 2015, unseen NOISEX-92 noise</strong> [V]: PESQ 2.60 and STOI 0.876 at 5 dB, but only 1.89 and 0.688 at −5 dB.
+- <strong>Mukhutdinov et al., IEEE Access 2023</strong> [V]: for drone ego-noise at −15 dB, the best of 12 DNNs reaches only PESQ 1.9 and ESTOI 0.4.</p>
+<p>D-ANC therefore reports every metric <strong>per input SNR and per noise category</strong>.</p>
+<p><strong>On "PESQ &gt; 4".</strong> The project owner asked for PESQ above 4. On wideband PESQ that has not been achieved on any public benchmark by any causal or non-causal system we could find:
+- <strong>Best non-causal systems on the comparatively mild VB-D test set (2.5–17.5 dB SNR)</strong> [V]: CMGAN 3.41, MP-SENet 3.50, SEMamba 3.55 (3.69 with perceptual contrast stretching).
+- <strong>Best causal systems</strong> [V]: BASENet-causal 3.44 (Thales, preprint, Jun 2026), FRCRN 3.21, DeepFilterNet3 3.17.</p>
+<p>D-ANC reports where PESQ-NB and PESQ-WB exceed 4 by condition, and does not claim an average that the physics and the literature do not support. §8 has the details.</p>
+<hr />
+<h2 id="2-state-of-the-art-and-the-architecture-decision">2. State of the art and the architecture decision</h2>
+<h3 id="21-evidence-table-causal-or-real-time-speech-enhancement">2.1 Evidence table: causal or real-time speech enhancement</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Model (venue, date)</th>
+<th>Params / compute</th>
+<th>Latency</th>
+<th>Published quality <em>(test set — not defence)</em></th>
+<th>Licence</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RNNoise (IEEE MMSP 2018)</td>
+<td>87,503 weights</td>
+<td>20 ms window, 10 ms hop, 48 kHz</td>
+<td>(DSP/DL hybrid)</td>
+<td>BSD-3</td>
+<td>[V]</td>
+</tr>
+<tr>
+<td>DeepFilterNet2 (IWAENC 2022)</td>
+<td>2.31 M / 0.356 GMAC</td>
+<td>40 ms (2-frame look-ahead)</td>
+<td>VB-D PESQ 3.08 (3.03 with post-filter); RTF 0.04 on i5-8250U, 0.42 on Raspberry Pi 4</td>
+<td>MIT / Apache-2.0</td>
+<td>[V]</td>
+</tr>
+<tr>
+<td>DeepFilterNet3 (Interspeech 2023 show &amp; tell)</td>
+<td>≈2.1 M / 0.35 GMAC (per DPDFNet paper)</td>
+<td>40 ms</td>
+<td>VB-D PESQ 3.17, STOI 0.944; RTF 0.19 single-thread i5-8250U</td>
+<td>MIT / Apache-2.0</td>
+<td>[V]</td>
+</tr>
+<tr>
+<td>GTCRN (ICASSP 2024)</td>
+<td>48.2 K / 33 MMAC/s</td>
+<td>0 look-ahead</td>
+<td>VB-D PESQ 2.87, STOI 0.940, SI-SNR 18.83</td>
+<td>MIT</td>
+<td>[V]</td>
+</tr>
+<tr>
+<td>ULCNet (ICASSP 2024)</td>
+<td>688 K / 0.098 GMAC</td>
+<td>32 ms window</td>
+<td>VB-D PESQ 2.87 (ULCNet_MS); RTF 0.127 on 1 Cortex-A53 core</td>
+<td>(no public code found)</td>
+<td>[V]</td>
+</tr>
+<tr>
+<td>LiSenNet (ICASSP 2025)</td>
+<td>37 K / 56 MMAC/s</td>
+<td>0 look-ahead</td>
+<td>VB-D PESQ 3.07 (with PESQ loss)</td>
+<td>MIT</td>
+<td>[V]</td>
+</tr>
+<tr>
+<td>UL-UNAS (IEEE TASLP, 2026)</td>
+<td>171 K / 35 MMAC/s</td>
+<td>0 look-ahead</td>
+<td>VB-D PESQ 2.96, or 3.09 with PESQ loss</td>
+<td>MIT</td>
+<td>[V]</td>
+</tr>
+<tr>
+<td>FRCRN (ICASSP 2022)</td>
+<td>6.9 M (16 kHz)</td>
+<td>30 ms</td>
+<td>VB-D PESQ 3.21</td>
+<td>Apache-2.0</td>
+<td>[V]</td>
+</tr>
+<tr>
+<td>BASENet-causal (arXiv Jun 2026, Thales)</td>
+<td>0.81 M / 7.1 GMAC</td>
+<td>not stated</td>
+<td>VB-D PESQ 3.44 (preprint)</td>
+<td>none</td>
+<td>[V]</td>
+</tr>
+<tr>
+<td>DPDFNet-8 (Speech Communication 2026, Ceva)</td>
+<td>3.5 M / 4.4 GMAC</td>
+<td>≈40 ms</td>
+<td>own 0/5/10 dB multilingual set: PESQ 3.20 vs DFN3 2.76 vs GTCRN 2.21 (v3 values)</td>
+<td>Apache-2.0</td>
+<td>[V]</td>
+</tr>
+<tr>
+<td>Non-causal ceiling: CMGAN / MP-SENet / SEMamba</td>
+<td>1.8–2.3 M</td>
+<td>offline</td>
+<td>VB-D 3.41 / 3.50 / 3.55</td>
+<td>MIT</td>
+<td>[V]</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="22-decision">2.2 Decision</h3>
+<p>The decision is a <strong>DeepFilterNet/GTCRN/DPCRN-family hybrid, re-designed for 16 kHz defence voice</strong>. It is not a time-domain model and not a generative one. The reasons:</p>
+<ol>
+<li><strong>Compute fits the edge with margin.</strong> The two-stage "envelope gain + deep filter" family reaches the best quality per MAC among causal models: DFN2/3 at about 0.35 GMAC/s, and GTCRN/UL-UNAS at tens of MMAC/s [V]. D-ANC's round-1 models need 0.37 GMAC/s (LL-small) to 0.76 GMAC/s (v2), counted analytically. The full engine block takes 0.5 ms per 10 ms frame on a single M4 core (2.1 ms mean in paced real time) [M]. Round 2: the deployed v3 HQ needs 1.37 GMAC/s and takes 0.67 ms unpaced (2.7–2.8 ms mean paced). The two-network two-mic configuration takes 1.27 ms unpaced and 3.1–4.1 ms paced [M] (§6, §8.5).</li>
+<li><strong>Complex domain and phase.</strong> The output is a complex deep filter in the 0–3.15 kHz band, so phase is enhanced, not just copied from the noisy input. This band carries voiced-speech harmonics and also rotor, engine and track-slap lines. The research notes caution that DFN's deep filter was designed for periodic <em>speech</em>, and that its effect on periodic <em>noise</em> had to be measured [N]. §8 measures it.</li>
+<li><strong>Sub-band and full-band processing, as the brief requires.</strong> Sub-band feature unfolding and per-band temporal GRUs model local statistics. An intra-frame bidirectional GRU across frequency models global spectral structure, which is legal because it does not look into the future.</li>
+<li><strong>Generative or diffusion enhancers are excluded for safety-critical voice.</strong> The Interspeech 2025 URGENT challenge found that generative enhancers can hallucinate content and that DNSMOS rated hallucinated output highly [N]. A command channel must never invent words.</li>
+<li><strong>16 kHz instead of 48 kHz.</strong> Tactical radio vocoders are narrowband (MELPe at 2400 bit/s uses 22.5 ms frames at 8 kHz [V]). 16 kHz keeps wideband intelligibility cues up to 8 kHz at one-third of the compute of full-band models.</li>
+</ol>
+<hr />
+<h2 id="3-component-1-scalable-dataset-pipeline">3. Component 1: Scalable dataset pipeline</h2>
+<h3 id="31-sources-and-licences-all-fetched-and-hashed-by-dancdatadownload-except-the-partial-train-clean-100-stream-whose-prefix-hash-was-not-recorded-see-its-provenance-note">3.1 Sources and licences, all fetched and hashed by <code>danc.data.download</code> (except the partial train-clean-100 stream, whose prefix hash was not recorded; see its provenance note)</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Corpus</th>
+<th>Content used</th>
+<th>Licence</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LibriSpeech dev-clean, test-clean; Mini-LibriSpeech train-clean-5</td>
+<td>Clean speech</td>
+<td>CC BY 4.0 [V]</td>
+<td>Speaker-disjoint train (62 speakers, 9.9 h), val (6 speakers, 0.8 h), test (40 speakers, 5.4 h)</td>
+</tr>
+<tr>
+<td>LibriSpeech train-clean-100, <strong>partial</strong></td>
+<td>+35 speakers, 15 h (v2 training set: 97 speakers, 25 h)</td>
+<td>CC BY 4.0 [V]</td>
+<td>Streaming stopped at about 1.0 GB because of disk space. One truncated file was excluded, not deleted.</td>
+</tr>
+<tr>
+<td>NOISEX-92, 15 recordings (SPIB mirror)</td>
+<td>F-16 and Buccaneer cockpits, Leopard and M109 vehicles, .50 cal machine gun, destroyer engine room and operations room, babble, factory, HF channel, Volvo</td>
+<td>© TNO 1990, NATO RSG-10 distribution; <strong>redistribution terms unclear</strong> [V]</td>
+<td>235 s per type at 19.98 kHz, resampled to 16 kHz. Train on the first 75 %, test on the last 20 %.</td>
+</tr>
+<tr>
+<td>ESC-50, 16 defence-relevant classes</td>
+<td>Helicopter, siren, engine, airplane, wind, fireworks, chainsaw, train, thunderstorm, rain, crackling fire, hand saw, car horn, glass breaking, door knock, sea waves</td>
+<td><strong>CC BY-NC 3.0, non-commercial</strong> [V]</td>
+<td>Folds 1–4 train, fold 5 test</td>
+</tr>
+<tr>
+<td>DroneAudioDataset (Al-Emadi et al.)</td>
+<td>Bebop and Mambo propeller noise</td>
+<td><strong>No licence file</strong> [V]; internal R&amp;D only, not for redistribution</td>
+<td>80/20 hash split</td>
+</tr>
+<tr>
+<td>VoiceBank+DEMAND test (16 kHz mirror)</td>
+<td>824 pairs; public benchmark only</td>
+<td>CC BY 4.0 [V]</td>
+<td>Never used for training</td>
+</tr>
+<tr>
+<td>Synthetic generators, <code>danc.data.synth_noise</code></td>
+<td>13 defence noise types (§3.2)</td>
+<td>Project-generated</td>
+<td>Disjoint seed streams for train and test</td>
+</tr>
+<tr>
+<td>RIR bank (pyroomacoustics image-source method)</td>
+<td>300 train + 300 test RIRs, target RT60 0.1–0.8 s. Far-field median RT60 ≈ 0.50 s by T20 fit (0.37 s two-point estimate); near-field RIRs are dominated by the direct path (<code>scripts/rir_stats.py</code> → <code>reports/results/rir_stats.json</code>)</td>
+<td>Project-generated</td>
+<td>Near-field (talker 3–12 cm) and far-field (noise 1–6 m)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Data gaps, flagged rather than guessed.</strong>
+- No openly licensed corpus was found of artillery, armoured-vehicle or gunfire noise recorded at a headset microphone together with speech [N].
+- The best open gunshot corpora are licensed but were <strong>not</strong> used here, because disk space and the user's choice limited downloads: the Kabealo &amp; Wyatt edge-device gunshot set (CC BY 4.0, 1.57 GB) and the Free Firearm Sound Library (CC0) [N].
+- DREGON drone data is academic-only.
+- DroneAudioSet (NeurIPS 2025, MIT, 42.6 GB) is the most relevant open drone ego-noise corpus but is too large for this machine [N].</p>
+<h3 id="32-physics-based-synthetic-defence-noise-synth_noisepy">3.2 Physics-based synthetic defence noise (<code>synth_noise.py</code>)</h3>
+<p>The table below summarises the models. <code>reports/figures/synth_noise_grid.png</code> shows the spectrograms; wav examples are in <code>data/synthetic_examples/</code>.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gunshot_single / gunfire_burst / gunfire_sporadic</td>
+<td>Modified-Friedlander muzzle blast with positive phase 0.5–3 ms, stretched with distance up to about 5 ms; Maher (IEEE SAFE 2007) notes muzzle blast typically lasts &lt; 3 ms [V]. Optional supersonic N-wave arriving earlier; ground reflection; distance-dependent air-absorption low-pass; open, urban, forest or indoor echo tails. Automatic fire at 600–1000 rounds per minute.</td>
+</tr>
+<tr>
+<td>artillery / explosion</td>
+<td>Friedlander positive phase 5–50 ms (artillery) or 2–10 ms (close explosion); strong rumble below 250 Hz with 1–4 s decay; optional incoming whistle (artillery); debris crackle (explosion).</td>
+</tr>
+<tr>
+<td>helicopter</td>
+<td>Main-rotor blade-passing frequency 10–30 Hz with harmonics; the Black Hawk BPF is about 17 Hz [V]. Blade-vortex-interaction "slap" pulse per blade passage, tail-rotor BPF of 50–120 Hz, turbine tones from 1–6 kHz, rotor-modulated broadband noise, optional Doppler fly-by.</td>
+</tr>
+<tr>
+<td>drone_multirotor</td>
+<td>4–8 rotors with BPF 80–400 Hz, RPM jitter, manoeuvre drift, 10–30 harmonics, motor whine and turbulence.</td>
+</tr>
+<tr>
+<td>siren_wail / yelp / hilo</td>
+<td>Odd-harmonic sweeps (wail 0.1–0.5 Hz, yelp 2–5 Hz) and two-tone alternation, with Doppler.</td>
+</tr>
+<tr>
+<td>wind</td>
+<td>Low-frequency turbulence with gust envelopes and pops. This is a simplified version of the Nelke &amp; Vary (IWAENC 2014) approach [V].</td>
+</tr>
+<tr>
+<td>tracked_vehicle, jet_flyby</td>
+<td>Diesel firing harmonics, track-slap impulses, gearbox whine; jet-mixing hump with Doppler fan tones.</td>
+</tr>
+</tbody>
+</table></div>
+<p><img alt="Synthetic defence-noise generators: spectrograms of 6 s examples" loading="lazy" src="figures/synth_noise_grid.png" /></p>
+<p>These generators add <strong>parametric variety, not field realism</strong>. Validating on recorded range and vehicle noise is listed as a required next step (§9).</p>
+<h3 id="33-mixing-recipe-mixerpy-dynamic-mixing-so-no-mixture-is-ever-reused">3.3 Mixing recipe (<code>mixer.py</code>, dynamic mixing, so no mixture is ever reused)</h3>
+<ul>
+<li><strong>Speech.</strong> A 3 s crop for the v2 runs (4 s for the pilot and the validation set), set to an active level of −40 to −15 dBFS using a P.56-<em>style</em> frame-based active level. This is not a compliant P.56 implementation.</li>
+<li><strong>Noise category.</strong> Stationary 25 %, non-stationary 35 %, impulsive 20 %, mixed "battlefield" 20 % (a stationary or non-stationary bed plus impulsive events; with p = 0.4 a third non-stationary layer such as rotor, drone or siren).</li>
+<li>Within a category, sources are drawn family-balanced across NOISEX, ESC-50, drone and synthetic, so that 300 drone clips do not swamp 10 NOISEX files.</li>
+<li>Impulsive scenes get a weak background bed with probability 0.6, because real fire never happens in silence.</li>
+<li><strong>SNR.</strong> Uniform −10…20 dB for stationary and non-stationary noise, −10…15 dB for impulsive and mixed. SNR is active-speech power over whole-segment noise power at the microphone.</li>
+<li><strong>Augmentation.</strong></li>
+<li>Near-field room reverb on speech (p = 0.25; the target keeps the direct path plus the first 50 ms).</li>
+<li>Far-field reverb on noise (p = 0.35).</li>
+<li><strong>ADC/pre-amp clipping</strong> (p = 0.10; drive 1.2–4× full scale, hard or tanh). Firearm peaks of roughly 140–175 dB SPL [V] saturate headset microphones.</li>
+<li>Microphone EQ (p = 0.2), applied to both input and target.</li>
+<li>Noise-only examples (p = 0.02, target = silence) and clean-only examples (p = 0.02).</li>
+<li><strong>Dual-microphone scenes (<code>dual_mic.py</code>).</strong> Primary boom mic plus an outward-facing reference mic 8–15 cm away.</li>
+<li>1–3 directional sources with fractional-delay propagation, early reflections and head or helmet shadowing.</li>
+<li>A diffuse field with spherically-isotropic coherence sinc(2πfd/c) (Habets &amp; Gannot 2007).</li>
+<li>Talker leakage into the reference at −25…−12 dB, plus microphone self-noise.</li>
+</ul>
+<h3 id="34-fixed-evaluation-sets-build_testsetpy-flac-with-metadata-rebuildable-from-seeds">3.4 Fixed evaluation sets (<code>build_testset.py</code>; FLAC with metadata, rebuildable from seeds)</h3>
+<ul>
+<li><strong>defence_v1:</strong> 900 mixtures of 6 s. Four categories × SNR {−5, 0, 5, 10, 15} dB × 40, plus a −10 dB stress condition with 4 × 25. Unseen speakers and test-split noise only.</li>
+<li><strong>dualmic_v1:</strong> 240 headset scenes (primary, reference, clean). Four categories × SNR {−5, 0, 5, 10} dB × 15.</li>
+<li><strong>VoiceBank+DEMAND test:</strong> 824 pairs, a published civilian benchmark used for comparison only.</li>
+</ul>
+<h3 id="35-round-2-additions-edge-cases-dual-microphone-training-data-crew-babble">3.5 Round-2 additions: edge cases, dual-microphone training data, crew babble</h3>
+<ul>
+<li><strong>Edge-case test set <code>defence_edge_v1</code></strong> (<code>danc.data.build_edgeset</code>, 304 files, 64 MB; test speakers and test-split noise only). These are conditions a fielded headset meets that the main test set does not isolate:</li>
+</ul>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Construction</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>clip_heavy</code></td>
+<td>Impulsive or mixed noise at 0/5 dB, then hard ADC clipping at 2–6× full scale (target unclipped)</td>
+<td>Gunfire saturates headset microphones and ADCs</td>
+</tr>
+<tr>
+<td><code>level_low</code></td>
+<td>Talker at −45 dBFS active level, noise at 0/5/10 dB</td>
+<td>Very low mic gain, quiet talker</td>
+</tr>
+<tr>
+<td><code>level_high</code></td>
+<td>Mixture peak-normalised to 0.98 full scale (no clipping)</td>
+<td>Hot mic gain</td>
+</tr>
+<tr>
+<td><code>reverb_cabin</code></td>
+<td>Talker 1–6 m from the mic through a far-field RIR; target = direct path + 50 ms</td>
+<td>Vehicle cabins, shelters, mic off the boom</td>
+</tr>
+<tr>
+<td><code>radio_band</code></td>
+<td>Mixture and target band-limited to 300–3400 Hz (6th-order Butterworth)</td>
+<td>Speech already through a narrowband radio leg</td>
+</tr>
+<tr>
+<td><code>noise_only</code></td>
+<td>No talker; noise at −26 dBFS</td>
+<td>The output must stay quiet (attenuation in dB)</td>
+</tr>
+<tr>
+<td><code>post_blast</code></td>
+<td>Explosion 25–35 dB above the talker; speech 50–300 ms later</td>
+<td>The normaliser and recurrent state must recover at once</td>
+</tr>
+<tr>
+<td><code>noise_switch</code></td>
+<td>Three 2 s noise segments of different categories joined abruptly</td>
+<td>Tracking non-stationary scenes</td>
+</tr>
+<tr>
+<td><code>hum400</code></td>
+<td>400 Hz aircraft power hum with harmonics + 50 Hz mains hum</td>
+<td>Tonal interference in airborne platforms</td>
+</tr>
+<tr>
+<td><code>crew_babble</code></td>
+<td>2–3 competing test speakers at TIR 0/5/10 dB + vehicle bed</td>
+<td>Other crew talking: the hardest case for one microphone</td>
+</tr>
+<tr>
+<td><code>long_stream</code></td>
+<td>4 × 60 s, several utterances, noise type changes every 10 s</td>
+<td>State drift and stability in continuous operation</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>Dual-microphone training generator</strong> (<code>danc.data.dual_mixer</code>). Every training example is a new headset scene rendered by the same simulator as the dual-mic test sets (§3.3), from training speakers and training-split noise. It includes clipping of both microphones, an independent EQ per microphone, timbre/bandwidth augmentation, and clean-only and noise-only examples. Sparse impulsive noise could produce an all-silent noise window, which crashed the first two-mic run at step ≈ 2 500. The noise is now redrawn up to five times, then given a −80 dB floor (<code>tests/test_two_mic.py</code>).</li>
+<li><strong>Dual-microphone crew-babble test set <code>dualmic_babble_v1</code></strong> (<code>danc.data.build_dual_babble</code>, 60 scenes). It was added after the single-mic edge cases showed crew babble to be the weakest case. The wearer is close-talk at the boom mic. 2–3 other test speakers are directional sources 0.6–2 m away, reaching both microphones at similar level. A diffuse vehicle bed sits 10 dB below the wearer. TIR at the primary is 0/5/10 dB (measured input SNR −0.4/3.8/7.0 dB including the bed).</li>
+</ul>
+<hr />
+<h2 id="4-component-2-model-architecture-dancnet">4. Component 2: Model architecture (DANCNet)</h2>
+<pre><code> STFT frame X(t) [161 bins, 20 ms sqrt-Hann, 10 ms hop]
+   │
+   ├─ impulse-robust normaliser: divide by sqrt(median of last 64 frame energies)  ← a gunshot cannot move a median
+   ├─ features: |X|^0.3 and compressed Re/Im  →  bins 0..63 kept (0–3.15 kHz), bins 64..160 → 32 ERB bands  (96 units)
+   ├─ sub-band unfolding (each unit + 2 neighbours)  → 9 channels
+   ├─ encoder: Conv(1×5,/2) → CausalConv(2×3,/2) → CausalConv(2×3)        [96 → 48 → 24 units]
+   ├─ N × dual-path block:  BiGRU across frequency (full-band)  +  causal GRU across time (per sub-band)
+   ├─ decoder: CausalConv + 2 × transposed conv with skip concatenation   [24 → 48 → 96]
+   └─ heads (96 units):
+        low band 0–3.15 kHz  → complex DEEP FILTER, N taps over frames t-N+1..t, output frame t-L
+        high band 3.15–8 kHz → real ERB-band gains (sigmoid)
+        all bands            → speech-presence probability (SPP), which gates the reference-mic NLMS
+</code></pre>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Width / dual-path blocks</th>
+<th>Deep-filter taps / look-ahead L</th>
+<th>Algorithmic latency</th>
+<th>Params</th>
+<th>MAC per frame</th>
+<th>GMAC/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LL-small (pilot, design check)</td>
+<td>64 / 2</td>
+<td>3 / 0</td>
+<td>20 ms</td>
+<td>164 K</td>
+<td>3.67 M</td>
+<td>0.37</td>
+</tr>
+<tr>
+<td><strong>v2-HQ</strong></td>
+<td>80 / 3</td>
+<td>5 / 2</td>
+<td><strong>40 ms</strong></td>
+<td>340 K</td>
+<td>7.64 M</td>
+<td>0.76</td>
+</tr>
+<tr>
+<td><strong>v2-LL</strong> (warm-started from v2-HQ)</td>
+<td>80 / 3</td>
+<td>5 / 0</td>
+<td><strong>20 ms</strong></td>
+<td>340 K</td>
+<td>7.64 M</td>
+<td>0.76</td>
+</tr>
+<tr>
+<td><strong>v3-HQ</strong> (round 2)</td>
+<td>96 / 4</td>
+<td>5 / 2</td>
+<td><strong>40 ms</strong></td>
+<td>609 K</td>
+<td>13.75 M</td>
+<td>1.37</td>
+</tr>
+<tr>
+<td><strong>v3-LL</strong> (round 2, warm-started from v3-HQ)</td>
+<td>96 / 4</td>
+<td>5 / 0</td>
+<td><strong>20 ms</strong></td>
+<td>609 K</td>
+<td>13.75 M</td>
+<td>1.37</td>
+</tr>
+<tr>
+<td><strong>v3 two-microphone</strong> (round 2, warm-started from v3-HQ)</td>
+<td>96 / 4, primary <strong>and</strong> reference features</td>
+<td>5 / 2</td>
+<td><strong>40 ms</strong></td>
+<td>610 K</td>
+<td>13.81 M</td>
+<td>1.38</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Deployed after round 2</strong> (<code>exports/deployment_selection.json</code> → <code>exports/DEPLOYMENT.json</code>; round 1 kept in <code>exports/DEPLOYMENT_round1.json</code>):
+- <strong>HQ</strong>: v3-HQ continued (<code>exports/dancnet_v3hq_cont.onnx</code> ← <code>checkpoints/v3hq_cont/best.pt</code>, 40 ms).
+- <strong>LL</strong>: v2-LL, unchanged (<code>exports/dancnet_ll.onnx</code>, 20 ms). v3-LL missed its pre-registered bar and is left as an owner decision (§8.10).
+- <strong>TWO_MIC</strong>, for two-microphone headsets: the gated NLMS feeding the two-microphone v3 network (<code>exports/dancnet_v3_2mic.onnx</code>), with the HQ model in hot standby for a dead reference.</p>
+<p>Every change was made under a pre-registered rule (§8.10). Round-1 deployment: HQ = v2-HQ plus the robustness/PESQ-guided fine-tune (<code>exports/dancnet_hqft.onnx</code>); LL as above.</p>
+<p><strong>Round-2 architecture changes and why.</strong>
+- <strong>More capacity (v3).</strong> A per-band diagnosis of the round-1 deployed HQ model was run ad hoc in the session at 08:39 on 2026-10-04, 1.5 min before the v3 rule was written. It was later reproduced as <code>scripts/band_error_analysis.py</code> → <code>reports/results/band_error_analysis.csv</code>, on 160 defence files at −5/0/5/15 dB input. It found no single failing band:
+  - About 80 % of the speech energy lies below 1 kHz.
+  - At 15 dB input, the output band SNR is 17–21 dB and the log-spectral distance 5–6 dB in <em>every</em> band. At −5 dB input the LSD is 7–10 dB in every band.
+  - Below 1 kHz, where the speech energy is, the enhancement gain at 15 dB input is smallest: +3.4 to +5.1 dB, against +5.7 to +13.2 dB above 1 kHz.</p>
+<p>A band-specific fix was therefore unlikely to help. A speech-presence post-filter, tested in parallel <em>after</em> the v3 decision, confirmed this (§8.9). The remaining lever was model capacity: width 80 → 96 and 3 → 4 dual-path blocks. Compute rises from 0.76 to 1.37 GMAC/s; DeepFilterNet2/3 are about 0.35 GMAC/s. In the same analysis, v3 changes the output band SNR by −0.1 to +0.7 dB per band, and by +0.1 to +0.6 dB below 1 kHz at 0–15 dB input.
+- <strong>Two-microphone network.</strong> The round-1 hybrid feeds the reference mic only to a <em>linear</em> canceller (NLMS), which cannot use the reference above about 1–2 kHz where the noise field decorrelates (§6.2). The two-microphone variant gives the network the reference mic's features directly: 18 instead of 9 input channels in the first encoder layer, with everything after it unchanged. The network can then learn non-linear spatial cues, chiefly the level difference between the close-talk wearer and distant noise, per frequency band. It is warm-started from v3-HQ with the reference filters at zero, so training starts exactly from the single-mic model (<code>danc.train.train_dual</code>). The NLMS is bypassed for this network.
+- <strong>Reference-mic health monitor (engine, opt-in).</strong> A two-microphone network must not be fed a dead reference it never saw in training. With <code>--fallback-onnx &lt;single-mic model&gt;</code>, the engine keeps a single-mic network in hot standby. Levels are DC-removed and smoothed over about 100 ms. The reference counts as dead when it is at digital silence (&lt; −100 dBFS) or ≥ 40 dB below an <em>active</em> primary (&gt; −60 dBFS), for 0.5 s. The engine then cross-fades to the standby network over 100 ms, and back after 0.5 s within 30 dB of an active primary. When both microphones are quiet (a quiet room, speech pauses), there is no evidence either way and the state is kept. A first version used only an absolute threshold, and the code review showed it flipping networks in a quiet room and missing a dead mic with a DC offset. Both cases are now regression tests. While the reference is healthy the output is bit-identical to the plain two-mic engine (<code>tests/test_two_mic.py</code>).
+- <strong>Optional normaliser variant</strong> (<code>norm_type: ema</code>), used only for the ablation in §8.8. The median normaliser stays the default.</p>
+<p><strong>Design choices and how each serves the targets:</strong>
+- <strong>Impulse-robust median normaliser.</strong> A gunshot 40 dB above speech lasts a few frames. An exponential-mean normaliser, as in DFN, would be pulled up for hundreds of milliseconds and under-scale the speech that follows. A 0.64 s running median ignores events shorter than about 0.3 s. The state starts all-zero and is valid that way, which TensorRT and ONNX initialisation require. <em>Round-2 ablation (§8.8): the expected benefit was </em><em>not</em><em> measurable. An exponential-mean normaliser was slightly better overall (+0.020 PESQ-WB) and equal in post-blast recovery.</em>
+- <strong>Look-ahead L = 2 (HQ mode).</strong> With look-ahead the network sees a blast onset 20 ms before it must emit that frame, so it can suppress the onset frame itself instead of reacting one frame late. The cost is 20 ms more latency, which is still within the DNS 40 ms real-time limit [V] and far inside G.114's 150 ms [V]. The 20 ms LL mode is kept for latency-critical use.
+- <strong>Deep filter (N complex taps) in the low band.</strong> It models periodic components with sub-bin precision: voiced speech, and the rotor, engine and track-slap lines that the 50 Hz bin spacing cannot resolve. It is equivalent to DFN's deep filtering [V], with the trade-offs noted above. <em>Round-2 ablation (§8.8): without look-ahead, a single-tap complex mask was slightly better (+0.025 PESQ-WB), so the deep filter's added value is not demonstrated.</em>
+- <strong>SPP head.</strong> Adds about 5 k MACs per frame (&lt; 0.1 % of the network) and gives the adaptive filter a speech-aware step-size control (§6.2).
+- <strong>Exact streaming equivalence.</strong> The network is written once, with explicit state tensors: convolution caches, GRU states, normaliser history and deep-filter history. Offline training and frame-by-frame streaming are numerically identical. The tests check this to ≤1e-4, PyTorch and ONNX Runtime both, including look-ahead [M].</p>
+<hr />
+<h2 id="5-component-3-training-framework">5. Component 3: Training framework</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+<th>Basis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Loss</td>
+<td>1.0·L_cspec + 1.0·L_MR-STFT + 1.0·L_SI-SDR + 1.0·L_PMSQE + 0.5·L_asym + 0.1·L_SPP</td>
+<td>See below. L_cspec has internal weights 30/70, and L_asym an internal ×100 scale (<code>losses.py</code>)</td>
+</tr>
+<tr>
+<td>L_cspec</td>
+<td>Power-law compressed (c = 0.3) complex and magnitude MSE, weighted 30·(Re/Im) + 70·mag</td>
+<td>GTCRN HybridLoss [V]. Braun &amp; Tashev found mixing compressed magnitude and complex losses best at β = 0.3 (with c = 0.3 adopted, not tuned) [V].</td>
+</tr>
+<tr>
+<td>L_MR-STFT</td>
+<td>Spectral convergence + L1 on compressed magnitudes at n_fft 256/512/1024</td>
+<td>MR-STFT (Yamamoto et al. 2020) [N]; DFN uses a multi-resolution compressed loss [N]. Short windows matter for impulses.</td>
+</tr>
+<tr>
+<td>L_SI-SDR</td>
+<td>−SI-SDR in Bels, with silent targets masked</td>
+<td>Le Roux et al. 2019 [V]; same scaling as the GTCRN code [V]</td>
+</tr>
+<tr>
+<td>L_PMSQE (perceptual)</td>
+<td>PESQ-inspired symmetric and asymmetric loudness disturbance on 32 ms frames</td>
+<td>Martín-Doñas et al., IEEE SPL 25(11), 2018 [V]; Asteroid implementation vendored (MIT)</td>
+</tr>
+<tr>
+<td>L_asym</td>
+<td>Penalises only target-above-estimate compressed magnitude, i.e. speech removal</td>
+<td>Asymmetric losses from VoiceFilter-Lite (Google, 2020) and PLCPA-ASYM (Microsoft, 2021) [N]. Protects STOI at very low SNR.</td>
+</tr>
+<tr>
+<td>L_SPP</td>
+<td>BCE against an IRM-style target, |S|²/(|S|²+|N|²)</td>
+<td>Supervises the gating signal for the adaptive filter</td>
+</tr>
+<tr>
+<td>Optimiser</td>
+<td>HQ: AdamW, lr 1e-3, 1000-step warm-up, cosine decay to 2e-5, weight decay 1e-4, gradient clip 5, batch 16 × 3 s (pilot 4 s). LL warm start: lr 3e-4, 200-step warm-up, cosine to 1e-5. Fine-tunes: constant lr 5e-5 (D: 2e-4), gradient clip 3</td>
+<td>Matches DFN2/3 recipes (AdamW 1e-3, warm-up, cosine) [N]</td>
+</tr>
+<tr>
+<td>EMA</td>
+<td>Weight EMA including BatchNorm buffers, decay 0.999 (HQ) or 0.998 (LL and fine-tunes); used for validation, checkpoints and export</td>
+<td>Standard practice</td>
+</tr>
+<tr>
+<td>Model selection</td>
+<td>Best validation PESQ + 2·STOI on 200 fixed val mixtures (6 held-out speakers, all categories, −5…15 dB)</td>
+<td></td>
+</tr>
+<tr>
+<td>Perceptual fine-tune</td>
+<td>MetricGAN+-style: a discriminator predicts true PESQ-WB; the generator pushes toward 1 while the full loss above stays as an anchor</td>
+<td>MetricGAN+ (Interspeech 2021) reached VB-D 3.15 [V]. Adoption followed a <strong>pre-registered rule</strong> (<code>reports/results/finetune_decision_rule.md</code>): on the defence set ΔPESQ-WB ≥ −0.02, ΔSTOI ≥ −0.003 and ΔSI-SDR ≥ −0.2 dB; on VoiceBank, STOI up or PESQ +0.05; clean-input transparency not lower.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Runs actually performed</strong> (logs in <code>logs/</code>, configs in <code>configs/</code>, curves in <code>reports/figures/training_curves.png</code>):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Initialisation</th>
+<th>Data</th>
+<th>Steps × batch × length</th>
+<th>Wall time (M4 GPU)</th>
+<th>Best validation PESQ-WB / STOI / SI-SDR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pilot</code> (pipeline check, LL-small 164 k)</td>
+<td>random</td>
+<td>10 h speech, no synthetic noise</td>
+<td>1 046 × 16 × 4 s</td>
+<td>0.25 h</td>
+<td>1.83 / 0.871 / 10.9 dB</td>
+</tr>
+<tr>
+<td><code>hq</code> (v2, 40 ms)</td>
+<td>random</td>
+<td>25 h, 97 speakers + all noise incl. synthetic</td>
+<td>18 000 × 16 × 3 s</td>
+<td>5.7 h</td>
+<td>2.482 / 0.921 / 14.5 dB (step 16 000)</td>
+</tr>
+<tr>
+<td><code>ll</code> (v2, 20 ms)</td>
+<td>warm start from <code>hq</code></td>
+<td>same</td>
+<td>5 000 × 16 × 3 s</td>
+<td>1.8 h</td>
+<td>2.348 / 0.912 / 13.8 dB</td>
+</tr>
+<tr>
+<td><code>hq_metric</code> (round-1 deployed HQ)</td>
+<td><code>hq</code></td>
+<td>+ timbre/bandwidth aug. (p = 0.3), clean-only 8 %, PESQ discriminator (w = 2)</td>
+<td>2 000</td>
+<td>1.1 h</td>
+<td>final (deployed <code>last.pt</code>): 2.461 / 0.921 / 14.47 dB (start: 2.482)</td>
+</tr>
+<tr>
+<td><code>ll_metric</code> (not adopted)</td>
+<td><code>ll</code></td>
+<td>same</td>
+<td>2 000</td>
+<td>1.1 h</td>
+<td>final: 2.325 / 0.912 / 13.81 dB (start: 2.348)</td>
+</tr>
+</tbody>
+</table></div>
+<p><img alt="Training loss and validation PESQ-WB / STOI for the HQ run and the LL warm start (LL plotted on its own step axis; the early HQ points reflect the EMA warm-up)" loading="lazy" src="figures/training_curves.png" /></p>
+<p><strong>Observations.</strong>
+- <strong>EMA lag.</strong> EMA validation lags early in training; at step 2 000, 13 % of the random initial weights are still in the average. It is beneficial later.
+- <strong>Diminishing returns.</strong> Validation gains after step 12 000 were small (+0.02 PESQ), so a longer run on this data alone would not change the conclusions.
+- <strong>Cost of look-ahead.</strong> Removing look-ahead (LL) costs about 0.13 PESQ-WB and 0.75 dB SNR between the base models on the defence test set, and 0.11 PESQ-WB and 0.9 dB between the round-1 deployed models (Table R1).
+- <strong>The PESQ-guided stage did not raise in-domain PESQ.</strong> Its measured value is robustness: VoiceBank +0.13 PESQ and +0.012 STOI, and clean-speech transparency 2.98 → 3.56 PESQ (Table R10). The fine-tuned models were adopted or rejected by a <strong>pre-registered rule</strong> (<code>reports/results/finetune_decision_rule.md</code>). HQ was adopted. LL was rejected because it missed the defence-PESQ guard by 0.003.</p>
+<h3 id="51-round-2-training-on-the-apple-m4-gpu">5.1 Round 2: training on the Apple M4 GPU</h3>
+<p><strong>GPU use.</strong> Every training run in both rounds runs on the M4's integrated GPU through PyTorch's Metal backend (MPS). Each log states it at start-up (<code>[train] v3hq: params=609156 device=mps</code>). The CPU cores generate the dynamic training mixtures (4 worker processes) and compute validation PESQ/STOI (3 processes), so the GPU only does the network forward and backward passes and the losses.
+- <strong>Mixed precision is not available.</strong> MPS rejected half-precision inputs to the GRU kernels ("RNN input dtype" error, observed in the session, not logged), so training stays in fp32.
+- <strong>Batch size.</strong> Measured on the otherwise idle GPU (<code>scripts/choose_batch.py</code> → <code>reports/results/batch_benchmark.json</code>): one full training step including PMSQE, MR-STFT, backward and AdamW, 3 s crops.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Architecture</th>
+<th>Batch 16</th>
+<th>Batch 24</th>
+<th>Batch 32</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v2 (340 K)</td>
+<td>1.05 s/step, 45.8 s audio/s, 4.4 GB</td>
+<td>1.44 s, 50.0 s/s (+9 %), 5.4 GB</td>
+<td>1.84 s, 52.1 s/s (+14 %), 7.2 GB</td>
+</tr>
+<tr>
+<td>v3 (609 K)</td>
+<td>1.34 s/step, 35.8 s audio/s, 5.3 GB</td>
+<td>1.98 s, 36.4 s/s (+2 %), 8.4 GB</td>
+<td>3.11 s, 30.9 s/s (−14 %), 10.6 GB</td>
+</tr>
+</tbody>
+</table></div>
+<p>The rule, fixed before the measurement, was to use a larger batch only if it gives ≥ 25 % more audio per second within 7 GB of GPU memory. No larger batch qualified: the GPU is already saturated at batch 16, and larger batches only add memory pressure on the 16 GB of unified memory shared with the data workers. Batch 16 was kept.
+- <strong>One training job at a time.</strong> For the same reason the training runs were queued strictly one after another (<code>scripts/run_round2*_chain.sh</code>). Some CPU evaluations overlapped with training, so some wall times and evaluation durations include contention; no latency measurement overlapped with training. A batch benchmark started next to a training run pushed swap to about 7.3 GB, observed with <code>sysctl vm.swapusage</code> and not logged, and was stopped. The clean re-run in the queue is the one reported above.</p>
+<p><strong>Round-2 runs</strong> (logs <code>logs/&lt;run&gt;.out</code> and <code>logs/train_&lt;run&gt;.jsonl</code>, configs in <code>configs/</code>):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Initialisation</th>
+<th>Data / augmentation</th>
+<th>Steps × batch × length</th>
+<th>Wall time (M4 GPU)</th>
+<th>Best validation PESQ-WB / STOI / SI-SDR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>v3hq</code> (40 ms)</td>
+<td>random</td>
+<td>25 h, 97 speakers, all noise; timbre/bandwidth p = 0.2, clean-only 5 %, noise-only 2 %</td>
+<td>16 000 × 16 × 3 s</td>
+<td>6.9 h</td>
+<td>2.520 / 0.923 / 14.67 dB (step 16 000)</td>
+</tr>
+<tr>
+<td><code>v3ll</code> (20 ms)</td>
+<td><code>v3hq</code></td>
+<td>same</td>
+<td>4 000 × 16 × 3 s</td>
+<td>1.7 h</td>
+<td>2.363 / 0.913 / 13.90 dB</td>
+</tr>
+<tr>
+<td><code>v3_2mic</code> (40 ms, two mics)</td>
+<td><code>v3hq</code> (reference filters at zero)</td>
+<td>dual-mic scenes (§3.5); validated on <code>dualmic_val</code></td>
+<td>5 000 × 16 × 3 s (the first invocation crashed at step ≈ 2 500; the resume restarted from the step-2 000 checkpoint, so about 5 500 steps were executed)</td>
+<td>1.4 h + 1.6 h</td>
+<td>2.558 / 0.927 / 14.08 dB on dual-mic validation (step 5 000)</td>
+</tr>
+<tr>
+<td><code>v3hq_cont</code> (40 ms)</td>
+<td><code>v3hq</code> (warm restart, peak LR 3e-4, new data seed)</td>
+<td>same as <code>v3hq</code></td>
+<td>10 000 × 16 × 3 s</td>
+<td>5.0 h</td>
+<td>2.551 / 0.925 / 14.80 dB (step 10 000)</td>
+</tr>
+<tr>
+<td>6 ablation arms <code>abl_*</code> (§8.8)</td>
+<td>random, seed 101, identical data order</td>
+<td>v2 recipe</td>
+<td>2 500 × 16 × 3 s each</td>
+<td>0.8–1.0 h each</td>
+<td>Table R13</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>v3_2mic</code> validation is on the dual-mic validation scenes, so its numbers are not comparable with the single-mic rows.</p>
+<p><img alt="Round-2 validation PESQ-WB of the v3 runs on the M4 GPU; the continuation is plotted from step 16 000; the two-mic run uses the dual-mic validation scenes" loading="lazy" src="figures/round2_training_curves.png" /></p>
+<h2 id="6-component-4-real-time-inference-engine">6. Component 4: Real-time inference engine</h2>
+<h3 id="61-streaming-engine-enginepy-runnerspy-export_onnxpy">6.1 Streaming engine (<code>engine.py</code>, <code>runners.py</code>, <code>export_onnx.py</code>)</h3>
+<ul>
+<li><strong>Per 10 ms hop:</strong> shared STFT of both microphones → sub-band NLMS on the reference mic → one DANCNet step (ONNX) → inverse STFT → output peak limiter (−1 dBFS) for hearing protection and DAC headroom.</li>
+<li><strong>ONNX contract.</strong> Input <code>spec [1,1,161,2]</code> plus 8 state tensors for the v2 models (≈48–52 KB; 7 tensors / 32 KB for the 2-block LL-small), or 9 (≈68 KB) for the v3 models. The two-microphone model adds a second input, <code>spec_ref [1,1,161,2]</code>, and its metadata carries <code>in_ch = 2</code>. Outputs are <code>spec_out</code>, <code>spp</code> and the updated states. All states start at zero. The look-ahead and STFT parameters are stored in the ONNX metadata.</li>
+<li><strong>Runners.</strong> PyTorch, ONNX Runtime (CPU EP, with CUDA/TensorRT EPs on Jetson) and TensorRT 10 (<code>deploy/jetson/trt_runner.py</code>, untested on hardware) share one interface.</li>
+</ul>
+<h3 id="62-how-the-learned-model-and-the-lms-filter-work-together">6.2 How the learned model and the LMS filter work together</h3>
+<ol>
+<li><strong>Order: adaptive filter first, DNN second.</strong>
+   - A linear canceller fed from an outward reference microphone removes noise that is <em>coherent</em> between the two mics: low-frequency engine, rotor and vehicle noise from directional sources. It does so without distorting speech, which raises the SNR the network sees.
+   - Coherence collapses for diffuse noise above roughly c/(2d), about 1.1–2 kHz for an 8–15 cm spacing. The DNN removes that diffuse, non-linear and impulsive residual.
+   - Putting the DNN first would hand the LMS a non-linearly processed signal whose relation to the reference is no longer a linear transfer function.</li>
+<li><strong>Shared STFT, zero extra latency.</strong> The NLMS is per-bin, with 2 complex taps across frames (≈30 ms of reference-to-primary response) and μ = 0.1, working on the network's own analysis frames. The first, untuned version used 4 taps, μ = 0.3 and gate exponent 2 (§8.2).</li>
+<li><strong>DNN-gated adaptation.</strong> The step size is μ·(1−SPP_bin)·(1−SPP_global)⁴, where SPP_global is the mean speech presence over bins 6–70 (300–3500 Hz). This is the analogue of double-talk detection in echo cancellers and of DNN-based adaptation control (Haubner et al., ICASSP 2022 [V]; NKF [V]; Meta-AF [N]). Without the gate, talker leakage into the reference makes the LMS cancel speech. Widrow et al. showed that output SNR is then bounded by the inverse of the reference-mic SNR [V].</li>
+<li><strong>Impulse robustness.</strong> The update is frozen when reference power jumps by more than 20× (13 dB) over its 2 s average, and stays frozen while the impulse is in the tap line. Divergence guards reset the bin, and a per-bin output limit caps any reference-only transient at +6 dB above the primary in that bin.</li>
+<li><strong>Graceful degradation.</strong> The engine runs DNN-only when the reference channel is absent or silent, or with <code>--no-lms</code>. Other reference faults (hum, a loose connector) are contained by the divergence reset and output limiter. For the two-microphone network, which depends on the reference, round 2 added explicit reference-health monitoring with a hot-standby single-mic network (§4, §6.3).</li>
+</ol>
+<p><strong>Measured on Apple M4, ONNX Runtime 1.30 CPU, 1 thread, 6 000 frames</strong> (<code>scripts/benchmark_latency.py</code>, <code>reports/results/latency_mac_m4.json</code>, <code>reports/figures/latency_hist.png</code>) <strong>[M]</strong>:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Algorithmic latency</th>
+<th>Network step mean / p99.9</th>
+<th>Full engine block mean / p99.9 / max</th>
+<th>RTF</th>
+<th>Misses &gt; 10 ms</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HQ round-1 deployed (<code>dancnet_hqft.onnx</code>)</td>
+<td>40 ms</td>
+<td>0.42 / 0.47 ms</td>
+<td>0.50 / 0.61 / 0.75 ms</td>
+<td>0.050</td>
+<td>0</td>
+</tr>
+<tr>
+<td>LL deployed (<code>dancnet_ll.onnx</code>)</td>
+<td>20 ms</td>
+<td>0.43 / 0.45 ms</td>
+<td>0.51 / 0.61 / 0.68 ms</td>
+<td>0.051</td>
+<td>0</td>
+</tr>
+<tr>
+<td>LL-small (pilot architecture, 164 k)</td>
+<td>20 ms</td>
+<td>0.27 / 0.32 ms</td>
+<td>0.37 / 0.44 / 0.51 ms</td>
+<td>0.037</td>
+<td>0</td>
+</tr>
+</tbody>
+</table></div>
+<p><img alt="Per-hop compute time of the full streaming engine, 6 000 hops, Apple M4, one thread" loading="lazy" src="figures/latency_hist.png" /></p>
+<p><strong>Round-2 re-measurement</strong> (same machine, idle, all models in one run; <code>scripts/benchmark_latency.py --tag round2_final</code> → <code>reports/results/latency_mac_m4_round2_final.json</code>, <code>reports/figures/latency_hist_round2_final.png</code>) <strong>[M]</strong>:</p>
+<h4 id="table-r14-per-hop-compute-apple-m4-onnx-runtime-cpu-1-thread-6000-hops-unpaced">Table R14: per-hop compute, Apple M4, ONNX Runtime CPU, 1 thread, 6000 hops, unpaced</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Model (ONNX)</th>
+<th>mics</th>
+<th>algorithmic latency</th>
+<th>network step mean / p99.9 [ms]</th>
+<th>full engine block mean / p99.9 / max [ms]</th>
+<th>RTF</th>
+<th>misses &gt; 10 ms</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dancnet_hq.onnx</td>
+<td>1</td>
+<td>40 ms</td>
+<td>0.44 / 0.47</td>
+<td>0.51 / 0.59 / 0.63</td>
+<td>0.051</td>
+<td>0</td>
+</tr>
+<tr>
+<td>dancnet_hqft.onnx</td>
+<td>1</td>
+<td>40 ms</td>
+<td>0.42 / 0.48</td>
+<td>0.52 / 0.60 / 0.62</td>
+<td>0.052</td>
+<td>0</td>
+</tr>
+<tr>
+<td>dancnet_ll.onnx</td>
+<td>1</td>
+<td>20 ms</td>
+<td>0.43 / 0.48</td>
+<td>0.51 / 0.60 / 0.73</td>
+<td>0.051</td>
+<td>0</td>
+</tr>
+<tr>
+<td>dancnet_pilot.onnx</td>
+<td>1</td>
+<td>20 ms</td>
+<td>0.28 / 0.32</td>
+<td>0.37 / 0.46 / 0.50</td>
+<td>0.037</td>
+<td>0</td>
+</tr>
+<tr>
+<td>dancnet_v3hq.onnx</td>
+<td>1</td>
+<td>40 ms</td>
+<td>0.58 / 0.64</td>
+<td>0.66 / 0.75 / 0.80</td>
+<td>0.066</td>
+<td>0</td>
+</tr>
+<tr>
+<td>dancnet_v3ll.onnx</td>
+<td>1</td>
+<td>20 ms</td>
+<td>0.58 / 0.63</td>
+<td>0.66 / 0.74 / 0.83</td>
+<td>0.066</td>
+<td>0</td>
+</tr>
+<tr>
+<td>dancnet_v3hq_cont.onnx</td>
+<td>1</td>
+<td>40 ms</td>
+<td>0.57 / 0.63</td>
+<td>0.67 / 0.75 / 1.02</td>
+<td>0.067</td>
+<td>0</td>
+</tr>
+<tr>
+<td>dancnet_v3_2mic.onnx</td>
+<td>2</td>
+<td>40 ms</td>
+<td>0.59 / 0.64</td>
+<td>0.62 / 0.69 / 0.79</td>
+<td>0.062</td>
+<td>0</td>
+</tr>
+<tr>
+<td>NLMS → dancnet_v3_2mic.onnx</td>
+<td>2</td>
+<td>40 ms</td>
+<td>—</td>
+<td>0.68 / 1.22 / 1.50</td>
+<td>0.068</td>
+<td>0</td>
+</tr>
+<tr>
+<td>NLMS → dancnet_v3_2mic.onnx + dancnet_v3hq_cont.onnx (hot standby)</td>
+<td>2</td>
+<td>40 ms</td>
+<td>—</td>
+<td>1.27 / 1.41 / 1.52</td>
+<td>0.127</td>
+<td>0</td>
+</tr>
+<tr>
+<td>dancnet_v3_2mic.onnx + dancnet_v3hq_cont.onnx (hot standby)</td>
+<td>2</td>
+<td>40 ms</td>
+<td>—</td>
+<td>1.21 / 1.33 / 1.42</td>
+<td>0.121</td>
+<td>0</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>The round-1 models reproduce their earlier mean and p99.9 within 0.03 ms, so the two runs are comparable.</li>
+<li>The deployed round-2 HQ model (<code>dancnet_v3hq_cont.onnx</code>, 1.8× the compute of v2) takes 0.67 ms mean and 0.75 ms p99.9 per 10 ms hop.</li>
+<li>
+<p>The deployed two-mic configuration runs two networks per hop: the cascade plus the HQ model in hot standby. It takes 1.27 ms mean, 1.41 ms p99.9 and 1.52 ms max, about 15 % of the hop. On a Jetson A78AE core, estimated at 2–3× slower <strong>[E]</strong>, that is about 2.5–4 ms unpaced. Paced on the Mac it had 2 late blocks in 11 800 (below). It has the least real-time margin of the three configurations and <strong>must pass the strict acceptance on the Jetson</strong> (<code>verify_install.py --strict-timing</code>, the 10-minute run) before fielding. The cascade without the standby network takes 0.68 ms mean.</p>
+</li>
+<li>
+<p><strong>Paced real-time simulation.</strong> Four dual-mic scenes were run through the round-1 deployed HQ engine with real-time pacing (<code>danc.inference.realtime --simulate --paced</code>): 2.0–2.2 ms mean, ≤ 4.3 ms max, 0 deadline misses (<code>reports/results/simulated_live_runs.json</code>). Blocks are slower when paced because the CPU idles between them.</p>
+</li>
+<li><strong>ONNX parity.</strong> The exported graphs match PyTorch to ≤ 1.3e-5 (round 1) and ≤ 2.0e-5 (round-2 exports) max absolute error on 300 frames including an impulse, and the streaming engine matches the offline model to ≤ 1e-4 (unit tests).</li>
+<li><strong>Mouth-to-radio latency budget, with the measured parts marked:</strong></li>
+</ul>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Algorithmic</td>
+<td>20 ms (LL) or 40 ms (HQ) <strong>[M]</strong></td>
+</tr>
+<tr>
+<td>Compute</td>
+<td>Round 1: 0.5 ms mean per hop unpaced; 2.1 ms mean, ≤ 4.3 ms max in paced real time (M4) <strong>[M]</strong>. Round 2: HQ 0.67 ms unpaced, 2.7–2.8 ms mean and ≤ 5.1 ms max paced; TWO_MIC 1.27 ms unpaced, 3.1–4.1 ms mean paced, max 12.4 ms with 2 late blocks in 11 800 <strong>[M]</strong>. Absorbed in the 10 ms hop, except those late blocks</td>
+</tr>
+<tr>
+<td>Audio I/O</td>
+<td>ADC/DAC + 2 × 10 ms ALSA periods, ≈ 25–40 ms <strong>[E]</strong>; to be measured with <code>measure_latency.py</code></td>
+</tr>
+<tr>
+<td><strong>Expected total</strong></td>
+<td><strong>≈ 45–80 ms [E]</strong>, within G.114's 150 ms "transparent" bound [V], before radio/vocoder delay</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="63-jetson-agx-orin-deployment-plan-deployjetson-not-measured-on-hardware">6.3 Jetson AGX Orin deployment plan (<code>deploy/jetson/</code>, <strong>not measured on hardware</strong>)</h3>
+<ul>
+<li><strong>Platform facts</strong> [V]:</li>
+<li>275 sparse INT8 TOPS; 12-core Cortex-A78AE at 2.2 GHz; 2048-core Ampere GPU; 15–60 W.</li>
+<li>nvpmodel modes: 15W (4 CPUs at 1.11 GHz), 30W (8 CPUs at 1.73 GHz, the default), 50W, and MAXN.</li>
+<li><strong>CPU path (recommended default).</strong> The model is batch-1, single-frame and tiny, so GPU kernel-launch overhead dominates. NVIDIA quotes 5–15 µs per kernel launch [V]. The recommended path is ONNX Runtime on one or two pinned A78AE cores with SCHED_FIFO.</li>
+<li><strong>[E]</strong> An A78AE core is assumed 2–3× slower than an M4 performance core.<ul>
+<li>From the measured unpaced 0.5 ms per hop [M], that gives about 1–1.5 ms per hop.</li>
+<li>The paced figures (2.1 ms mean, 4.3 ms max [M]) reflect idle-CPU clock and core scaling between blocks. Scaled the same way, they give about 4–6.5 ms mean and 8.5–13 ms worst case, and <strong>the worst case could exceed the 10 ms deadline</strong>.</li>
+<li>Round 2, same method: the deployed HQ (paced 2.7–2.8 ms mean, 5.1 ms max) scales to about 5.5–8.5 ms mean and 10–15 ms worst case. The two-network TWO_MIC configuration (3.1–4.1 ms mean paced) scales to about 6–12 ms mean. <strong>On an A78AE core it may not fit the 10 ms hop without RT tuning, two ORT threads, or moving one network to the GPU (TensorRT).</strong> This is an estimate <strong>[E]</strong>; the Jetson measurement decides.</li>
+<li>Mitigation: performance governor, an isolated core with SCHED_FIFO (<code>setup_audio.sh</code>), two ORT threads, the 0.37 GMAC/s LL-small variant, or the TensorRT GPU path.</li>
+<li>This must be measured with <code>trt_runner.py --onnx</code> and a 10-minute real-time run.</li>
+</ul>
+</li>
+<li><strong>GPU path.</strong> TensorRT FP16 with CUDA Graphs, using <code>build_trt_engine.sh</code>.</li>
+<li>TensorRT loops (which is how GRUs are imported) support FP32 and FP16 only [V], so INT8 is a CPU-only option. If used, it should be ORT dynamic quantization, which ORT recommends for RNNs [V].</li>
+<li>Published PTQ results: mixed FP16-INT8 cost 0.06 PESQ, uniform INT8 cost 0.3 [V].</li>
+<li>DLA is not recommended: TensorRT 10.7 was the last release to support it [V].</li>
+<li><strong>No published per-frame latency for any speech-enhancement model on Jetson AGX Orin was found</strong> [N]. The only Jetson audio-latency figure found was 80 ms of I/O latency without processing on a Xavier NX, from a robotics prototype [V]. I/O latency has to be measured with <code>measure_latency.py</code>.</li>
+</ul>
+<p><strong>Round 2: a deployment kit that someone new to the project can follow</strong> (<code>deploy/jetson/</code>; still <strong>not run on a Jetson</strong> in this project):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Step (<code>QUICKSTART.md</code>)</th>
+<th>Tool</th>
+<th>What it does and how the operator knows it worked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1–2 JetPack, power mode</td>
+<td><code>nvpmodel</code>, <code>jetson_clocks</code></td>
+<td>Checks JetPack 6.2.x and sets the fielded power mode first</td>
+</tr>
+<tr>
+<td>3 Copy</td>
+<td><code>package_for_jetson.sh</code> (dev machine)</td>
+<td>Builds <code>dist/jetson_bundle/</code> (≈ 13 MB) with only the run-time files, the deployed ONNX models (an existing bundle is updated in place, so it still also holds the round-1 <code>dancnet_hqft</code> model), 16 verification scenes and their reference results, and <code>SHA256SUMS</code>; check with <code>sha256sum -c</code></td>
+</tr>
+<tr>
+<td>4 Install</td>
+<td><code>install.sh</code></td>
+<td>Idempotent; apt packages, venv, <code>requirements-jetson.txt</code>. <strong>No PyTorch</strong> on the Jetson: the runtime imports only numpy, scipy, soundfile, sounddevice and ONNX Runtime. Options <code>--gpu</code>, <code>--with-trt</code>, <code>--offline-wheels</code> (air-gapped)</td>
+</tr>
+<tr>
+<td>5 Self-check</td>
+<td><code>verify_install.py</code></td>
+<td>Model contract vs <code>exports/DEPLOYMENT.json</code>; PESQ, STOI and SNR on the 16 reference scenes against the Mac values; robustness (NaN/Inf bursts, dead or absent reference, clipping, silence, reset determinism, a run past 30 s); a 3 000-hop timing test. Prints PASS/FAIL per check, <strong>exit code 0 only on PASS</strong>; <code>--strict-timing</code> for the Jetson acceptance</td>
+</tr>
+<tr>
+<td>6 TensorRT (optional)</td>
+<td><code>build_trt_engine.sh</code>, <code>trt_runner.py</code></td>
+<td>FP16 engines and a parity check against ORT</td>
+</tr>
+<tr>
+<td>7 Audio</td>
+<td><code>check_channels.py</code></td>
+<td>Confirms ch0 = boom mic, ch1 = reference mic, and the input levels (a swapped pair silently ruins the hybrid)</td>
+</tr>
+<tr>
+<td>8 Run</td>
+<td><code>danc_live.py</code></td>
+<td>Torch-free launcher: pre-flight device check, CPU pinning that adapts to the online cores of the power mode, SCHED_FIFO, safety wrapper (NaN/Inf guard, hard ±1 clamp, bounded statistics), stall watchdog (exits with code 4 so systemd restarts it if the USB interface disappears)</td>
+</tr>
+<tr>
+<td>9–11 Latency, power, acceptance</td>
+<td><code>measure_latency.py</code>, <code>log_power.sh</code>, 10-minute run</td>
+<td>Electrical loop-back latency; tegrastats rails per mode; <code>xruns</code> and <code>late</code> must stay 0</td>
+</tr>
+<tr>
+<td>12 Boot</td>
+<td><code>danc-live.service</code></td>
+<td>systemd unit, restart on failure</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>Bug found and fixed during round 2.</strong> The live safety wrapper trimmed the engine's timing history with slice deletion. That broke when the engine's history became a bounded <code>deque</code> in round 2: the live runtime would have raised <code>TypeError</code> after exactly 3 000 blocks (30 s). The 3 000-hop timing test stopped one block short of the trim, so it did not catch this. Fixed in <code>danc_jetson_rt.py</code>. It is now covered by a unit test and by a <code>verify_install.py</code> check that runs past the trim point.</li>
+<li><strong>Two-microphone headsets</strong> (deployed <code>TWO_MIC</code> configuration, §8.10): <code>danc_live.py --onnx exports/dancnet_v3_2mic.onnx --two-mic-cascade --fallback-onnx exports/dancnet_v3hq_cont.onnx</code>. <code>verify_install.py</code> checks it like the single-mic models: quality on the dual-mic scenes, a reference that dies mid-stream, and timing with both networks running.</li>
+</ul>
+<hr />
+<h2 id="7-component-5-prototype-setup">7. Component 5: Prototype setup</h2>
+<p><strong>Bench prototype as built and validated in this project.</strong> The complete live chain is implemented in <code>danc.inference.realtime</code>:
+- <strong>Capture.</strong> A two-channel input stream: ch0 is the primary boom mic, ch1 the outward-facing reference mic.
+- <strong>Processing.</strong> One <code>HybridEngine.process_block()</code> call per 10 ms PortAudio callback.
+- <strong>Output.</strong> The same processed signal on both output channels. The headset and the radio line-out are taken from the audio interface's outputs.
+- <strong>Monitoring.</strong> Per-block timing, xrun counts and JSON logging. With the two-mic configuration, the log also shows the reference-health state (<code>ref_dead</code>, <code>ref_switches</code>).
+- <strong>Configurations (round 2).</strong> The same hardware runs all three deployed configurations, selected by command-line options:
+  - single-mic HQ or LL with the NLMS hybrid (<code>--onnx exports/dancnet_v3hq_cont.onnx</code> or <code>exports/dancnet_ll.onnx</code>);
+  - the two-mic cascade with its fallback (<code>--onnx exports/dancnet_v3_2mic.onnx --two-mic-cascade --fallback-onnx exports/dancnet_v3hq_cont.onnx</code>).</p>
+<p>All three were run through the live launchers in paced simulated-live mode (§8.5; <code>reports/results/simulated_live_runs_round2.json</code>).</p>
+<p>On this Mac it was validated in <strong>paced simulated-live mode</strong>, where the same callback is driven by a 10 ms software clock from recorded dual-mic test scenes (§8.5). Live microphones were <strong>not</strong> recorded in this session: no capture hardware is attached, and recording the room would raise privacy concerns.</p>
+<p><strong>Hardware for the field prototype</strong> (<code>deploy/jetson/README.md</code> §4):</p>
+<pre><code> boom mic (primary, 2–3 cm from lips) ──┐
+                                        ├─► 2-in/2-out USB audio interface ─USB─► Jetson AGX Orin (danc.inference.realtime, SCHED_FIFO, pinned cores)
+ reference mic (outward, 8–15 cm) ──────┘          │
+                                                   ├─► headphone out ─► headset earcups (listen-back / receive path)
+                                                   └─► line out ─► pad + isolation transformer ─► radio MIC in; PTT via GPIO opto-isolator
+ sidetone (own voice) stays analog and unprocessed; the earcup's acoustic ANC stays on the headset's own codec or DSP
+</code></pre>
+<p><strong>Integration points and why they are set up this way:</strong>
+- <strong>Reference-mic placement.</strong> It sits on the outside of the earcup or helmet, facing away from the mouth. Widrow's analysis gives output SNR ≤ 1/SNR_ref when the talker leaks into the reference [V], so leakage must be kept low, ideally below −15 dB.
+- <strong>Microphones with a high acoustic overload point.</strong> Firearm peaks reach roughly 140–175 dB SPL [V]. Microphone clipping cannot be fully undone, so training includes clipping augmentation (§3.3).
+- <strong>Radio.</strong> A level-matched line output, ground isolation, and PTT driven from GPIO or the radio's accessory connector. Tactical vocoders such as MELPe (2400 bit/s, 22.5 ms frames at 8 kHz) [V] add their own framing delay. STANAG 4591 also includes a mandatory noise pre-processor [N], and how D-ANC interacts with it must be tested (§9).
+- <strong>Latency test.</strong> Electrical loop-back with <code>deploy/jetson/measure_latency.py</code>, first bypassed and then with the engine in the loop.
+- <strong>Power test.</strong> <code>log_power.sh</code> reads the tegrastats rails in each nvpmodel mode.
+- <strong>Acceptance test.</strong> Speech-intelligibility listening tests (Modified Rhyme Test, ANSI/ASA S3.2) through the full radio chain. MIL-STD-1474E §4.3 requires ≥ 80 % MRT (guessing-corrected) in worst-case noise [V]. MIL-STD-1472H Table XVII defines 91 % MRT as "normal acceptable" [V]. STOI and PESQ are engineering proxies; MRT is the military acceptance metric.</p>
+<hr />
+<h2 id="8-results">8. Results</h2>
+<p>All tables in this section are generated automatically from per-file results (<code>scripts/make_tables.py</code>), and <code>reports/results/tables.md</code> holds the same content. Per-file CSVs, which include every metric for every file and system, are in <code>reports/results/&lt;set&gt;/per_file.csv</code>. Enhanced audio is in <code>reports/audio/enhanced_&lt;set&gt;_&lt;system&gt;/</code>. It covers the round-2 deployed HQ (<code>dancnet_v3hq_cont</code>), the two-mic cascade (<code>hybrid2_v3_2mic</code>, dual-mic and crew-babble sets), the round-1 HQ (<code>dancnet_hq_metric</code>) and LL (<code>dancnet_ll</code>), v3 HQ/LL, the base HQ, DeepFilterNet3 and the dual-mic hybrids. A listening set is in <code>reports/audio/demo/</code>. <strong>Labels:</strong> "deployed" in the tables means the round-2 deployment (<code>exports/deployment_selection.json</code>). The round-1 HQ appears as "v2 HQ + fine-tune", and the round-1 hybrid as "Hybrid NLMS + v2 HQ fine-tuned". Each table compares the round-1 and round-2 models side by side.</p>
+<h3 id="81-defence-test-set-single-microphone">8.1 Defence test set (single microphone)</h3>
+<p><img alt="metrics vs SNR" loading="lazy" src="figures/defence_v1_metrics_vs_snr.png" /></p>
+<h4 id="table-r1-defence_v1-single-microphone-mean-over-input-snr-515-db-800-files-per-system">Table R1: defence_v1, single microphone, mean over input SNR −5…15 dB (800 files per system)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>PESQ-WB</th>
+<th>PESQ-NB</th>
+<th>STOI</th>
+<th>ESTOI</th>
+<th>SNR out [dB]</th>
+<th>ΔSNR [dB]</th>
+<th>SI-SDR [dB]</th>
+<th>n</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Noisy input</td>
+<td>1.342</td>
+<td>1.945</td>
+<td>0.815</td>
+<td>0.656</td>
+<td>3.80</td>
+<td>0.00</td>
+<td>3.82</td>
+<td>800</td>
+</tr>
+<tr>
+<td>Spectral subtraction</td>
+<td>1.406</td>
+<td>2.027</td>
+<td>0.812</td>
+<td>0.663</td>
+<td>5.59</td>
+<td>1.79</td>
+<td>4.99</td>
+<td>800</td>
+</tr>
+<tr>
+<td>Wiener (DD)</td>
+<td>1.405</td>
+<td>2.060</td>
+<td>0.794</td>
+<td>0.647</td>
+<td>5.91</td>
+<td>2.11</td>
+<td>5.05</td>
+<td>800</td>
+</tr>
+<tr>
+<td>Log-MMSE (LSA)</td>
+<td>1.437</td>
+<td>2.090</td>
+<td>0.798</td>
+<td>0.653</td>
+<td>5.94</td>
+<td>2.14</td>
+<td>5.13</td>
+<td>800</td>
+</tr>
+<tr>
+<td>DeepFilterNet3 (public, 40 ms)</td>
+<td>2.043</td>
+<td>2.754</td>
+<td>0.885</td>
+<td>0.779</td>
+<td>11.83</td>
+<td>8.03</td>
+<td>11.70</td>
+<td>800</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>2.326</td>
+<td>2.982</td>
+<td>0.904</td>
+<td>0.809</td>
+<td>13.04</td>
+<td>9.24</td>
+<td>13.27</td>
+<td>800</td>
+</tr>
+<tr>
+<td>D-ANC v2 LL fine-tuned (not adopted)</td>
+<td>2.303</td>
+<td>2.960</td>
+<td>0.904</td>
+<td>0.809</td>
+<td>13.08</td>
+<td>9.28</td>
+<td>13.28</td>
+<td>800</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ base (40 ms)</td>
+<td>2.455</td>
+<td>3.112</td>
+<td>0.914</td>
+<td>0.823</td>
+<td>13.79</td>
+<td>9.99</td>
+<td>14.01</td>
+<td>800</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>2.440</td>
+<td>3.096</td>
+<td>0.914</td>
+<td>0.823</td>
+<td>13.91</td>
+<td>10.11</td>
+<td>14.02</td>
+<td>800</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>2.344</td>
+<td>2.999</td>
+<td>0.906</td>
+<td>0.812</td>
+<td>13.24</td>
+<td>9.44</td>
+<td>13.39</td>
+<td>800</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>2.483</td>
+<td>3.140</td>
+<td>0.916</td>
+<td>0.826</td>
+<td>14.15</td>
+<td>10.35</td>
+<td>14.20</td>
+<td>800</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>2.511</td>
+<td>3.166</td>
+<td>0.918</td>
+<td>0.829</td>
+<td>14.31</td>
+<td>10.51</td>
+<td>14.35</td>
+<td>800</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="table-r2-defence_v1-by-input-snr-10-db-stress-condition-100-files-others-160-files">Table R2: defence_v1 by input SNR (−10 dB = stress condition, 100 files; others 160 files)</h4>
+<p><em>PESQ-WB</em></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>-10 dB</th>
+<th>-5 dB</th>
+<th>0 dB</th>
+<th>5 dB</th>
+<th>10 dB</th>
+<th>15 dB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Noisy input</td>
+<td>1.085</td>
+<td>1.112</td>
+<td>1.135</td>
+<td>1.258</td>
+<td>1.452</td>
+<td>1.753</td>
+</tr>
+<tr>
+<td>Log-MMSE (LSA)</td>
+<td>1.074</td>
+<td>1.119</td>
+<td>1.180</td>
+<td>1.344</td>
+<td>1.606</td>
+<td>1.938</td>
+</tr>
+<tr>
+<td>DeepFilterNet3 (public, 40 ms)</td>
+<td>1.299</td>
+<td>1.475</td>
+<td>1.706</td>
+<td>2.024</td>
+<td>2.332</td>
+<td>2.676</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>1.416</td>
+<td>1.627</td>
+<td>1.885</td>
+<td>2.293</td>
+<td>2.723</td>
+<td>3.101</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>1.495</td>
+<td>1.714</td>
+<td>2.009</td>
+<td>2.435</td>
+<td>2.849</td>
+<td>3.193</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>1.531</td>
+<td>1.768</td>
+<td>2.079</td>
+<td>2.516</td>
+<td>2.917</td>
+<td>3.273</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>1.425</td>
+<td>1.643</td>
+<td>1.909</td>
+<td>2.329</td>
+<td>2.737</td>
+<td>3.102</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>1.514</td>
+<td>1.748</td>
+<td>2.052</td>
+<td>2.488</td>
+<td>2.885</td>
+<td>3.242</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>PESQ-NB</em></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>-10 dB</th>
+<th>-5 dB</th>
+<th>0 dB</th>
+<th>5 dB</th>
+<th>10 dB</th>
+<th>15 dB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Noisy input</td>
+<td>1.372</td>
+<td>1.468</td>
+<td>1.594</td>
+<td>1.887</td>
+<td>2.210</td>
+<td>2.563</td>
+</tr>
+<tr>
+<td>Log-MMSE (LSA)</td>
+<td>1.333</td>
+<td>1.507</td>
+<td>1.694</td>
+<td>2.045</td>
+<td>2.417</td>
+<td>2.787</td>
+</tr>
+<tr>
+<td>DeepFilterNet3 (public, 40 ms)</td>
+<td>1.663</td>
+<td>2.039</td>
+<td>2.398</td>
+<td>2.808</td>
+<td>3.143</td>
+<td>3.379</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>1.891</td>
+<td>2.249</td>
+<td>2.586</td>
+<td>3.032</td>
+<td>3.392</td>
+<td>3.652</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>2.006</td>
+<td>2.371</td>
+<td>2.728</td>
+<td>3.160</td>
+<td>3.493</td>
+<td>3.729</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>2.050</td>
+<td>2.442</td>
+<td>2.810</td>
+<td>3.230</td>
+<td>3.557</td>
+<td>3.792</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>1.905</td>
+<td>2.264</td>
+<td>2.608</td>
+<td>3.052</td>
+<td>3.404</td>
+<td>3.667</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>2.037</td>
+<td>2.411</td>
+<td>2.779</td>
+<td>3.207</td>
+<td>3.532</td>
+<td>3.773</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>STOI</em></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>-10 dB</th>
+<th>-5 dB</th>
+<th>0 dB</th>
+<th>5 dB</th>
+<th>10 dB</th>
+<th>15 dB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Noisy input</td>
+<td>0.577</td>
+<td>0.665</td>
+<td>0.740</td>
+<td>0.836</td>
+<td>0.891</td>
+<td>0.942</td>
+</tr>
+<tr>
+<td>Log-MMSE (LSA)</td>
+<td>0.554</td>
+<td>0.648</td>
+<td>0.725</td>
+<td>0.820</td>
+<td>0.874</td>
+<td>0.925</td>
+</tr>
+<tr>
+<td>DeepFilterNet3 (public, 40 ms)</td>
+<td>0.662</td>
+<td>0.772</td>
+<td>0.847</td>
+<td>0.910</td>
+<td>0.936</td>
+<td>0.962</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>0.724</td>
+<td>0.808</td>
+<td>0.870</td>
+<td>0.924</td>
+<td>0.946</td>
+<td>0.971</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>0.747</td>
+<td>0.827</td>
+<td>0.883</td>
+<td>0.933</td>
+<td>0.951</td>
+<td>0.974</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>0.755</td>
+<td>0.835</td>
+<td>0.889</td>
+<td>0.937</td>
+<td>0.953</td>
+<td>0.975</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>0.726</td>
+<td>0.812</td>
+<td>0.872</td>
+<td>0.926</td>
+<td>0.947</td>
+<td>0.972</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>0.751</td>
+<td>0.831</td>
+<td>0.887</td>
+<td>0.935</td>
+<td>0.952</td>
+<td>0.975</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>output SNR [dB]</em></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>-10 dB</th>
+<th>-5 dB</th>
+<th>0 dB</th>
+<th>5 dB</th>
+<th>10 dB</th>
+<th>15 dB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Noisy input</td>
+<td>-11.18</td>
+<td>-6.20</td>
+<td>-1.26</td>
+<td>3.87</td>
+<td>8.81</td>
+<td>13.78</td>
+</tr>
+<tr>
+<td>Log-MMSE (LSA)</td>
+<td>-7.12</td>
+<td>-2.13</td>
+<td>2.22</td>
+<td>6.21</td>
+<td>10.07</td>
+<td>13.34</td>
+</tr>
+<tr>
+<td>DeepFilterNet3 (public, 40 ms)</td>
+<td>4.71</td>
+<td>6.92</td>
+<td>9.33</td>
+<td>12.21</td>
+<td>14.22</td>
+<td>16.50</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>5.39</td>
+<td>7.78</td>
+<td>10.18</td>
+<td>13.35</td>
+<td>15.62</td>
+<td>18.26</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>5.94</td>
+<td>8.39</td>
+<td>10.94</td>
+<td>14.22</td>
+<td>16.49</td>
+<td>19.53</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>6.42</td>
+<td>8.81</td>
+<td>11.29</td>
+<td>14.70</td>
+<td>16.85</td>
+<td>19.90</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>5.59</td>
+<td>7.93</td>
+<td>10.28</td>
+<td>13.61</td>
+<td>15.80</td>
+<td>18.58</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>6.30</td>
+<td>8.67</td>
+<td>11.12</td>
+<td>14.56</td>
+<td>16.69</td>
+<td>19.70</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="table-r3-defence_v1-by-noise-category-515-db">Table R3: defence_v1 by noise category (−5…15 dB)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>stationary PESQ-WB / STOI / SNR</th>
+<th>nonstationary PESQ-WB / STOI / SNR</th>
+<th>impulsive PESQ-WB / STOI / SNR</th>
+<th>mixed PESQ-WB / STOI / SNR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Noisy input</td>
+<td>1.27 / 0.787 / 3.8</td>
+<td>1.30 / 0.810 / 3.9</td>
+<td>1.52 / 0.856 / 3.7</td>
+<td>1.28 / 0.807 / 3.7</td>
+</tr>
+<tr>
+<td>Log-MMSE (LSA)</td>
+<td>1.55 / 0.783 / 8.3</td>
+<td>1.41 / 0.787 / 6.5</td>
+<td>1.45 / 0.838 / 3.9</td>
+<td>1.34 / 0.785 / 5.0</td>
+</tr>
+<tr>
+<td>DeepFilterNet3 (public, 40 ms)</td>
+<td>1.96 / 0.865 / 11.5</td>
+<td>2.03 / 0.874 / 11.9</td>
+<td>2.26 / 0.921 / 12.7</td>
+<td>1.92 / 0.881 / 11.2</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>2.18 / 0.883 / 12.1</td>
+<td>2.26 / 0.890 / 12.5</td>
+<td>2.69 / 0.940 / 14.7</td>
+<td>2.17 / 0.902 / 12.8</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>2.28 / 0.896 / 12.8</td>
+<td>2.35 / 0.900 / 13.3</td>
+<td>2.82 / 0.947 / 16.0</td>
+<td>2.30 / 0.912 / 13.6</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>2.32 / 0.900 / 13.1</td>
+<td>2.42 / 0.905 / 13.7</td>
+<td>2.92 / 0.949 / 16.3</td>
+<td>2.38 / 0.917 / 14.1</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>2.19 / 0.885 / 12.3</td>
+<td>2.29 / 0.893 / 12.8</td>
+<td>2.71 / 0.941 / 14.9</td>
+<td>2.19 / 0.904 / 13.0</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>2.30 / 0.898 / 13.0</td>
+<td>2.40 / 0.902 / 13.5</td>
+<td>2.88 / 0.948 / 16.1</td>
+<td>2.36 / 0.915 / 13.9</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="table-r4-share-of-defence_v1-files-meeting-each-target-515-db">Table R4: share of defence_v1 files meeting each target (−5…15 dB)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>SNR&gt;15 dB</th>
+<th>STOI&gt;0.85</th>
+<th>PESQ-WB&gt;2.5</th>
+<th>all three</th>
+<th>PESQ-NB&gt;4</th>
+<th>PESQ-WB&gt;4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Noisy input</td>
+<td>0.5%</td>
+<td>47.5%</td>
+<td>2.2%</td>
+<td>0.0%</td>
+<td>1.5%</td>
+<td>0.4%</td>
+</tr>
+<tr>
+<td>DeepFilterNet3 (public, 40 ms)</td>
+<td>26.0%</td>
+<td>73.5%</td>
+<td>26.6%</td>
+<td>18.1%</td>
+<td>2.6%</td>
+<td>0.6%</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>45.4%</td>
+<td>83.1%</td>
+<td>49.0%</td>
+<td>40.1%</td>
+<td>10.4%</td>
+<td>2.5%</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>35.4%</td>
+<td>79.8%</td>
+<td>40.6%</td>
+<td>30.5%</td>
+<td>5.0%</td>
+<td>1.2%</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>42.4%</td>
+<td>81.9%</td>
+<td>46.6%</td>
+<td>37.0%</td>
+<td>8.1%</td>
+<td>1.8%</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>37.0%</td>
+<td>80.1%</td>
+<td>42.1%</td>
+<td>32.4%</td>
+<td>6.0%</td>
+<td>1.9%</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>44.4%</td>
+<td>82.8%</td>
+<td>48.4%</td>
+<td>39.0%</td>
+<td>9.5%</td>
+<td>2.5%</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="table-r5-target-check-by-input-snr-d-anc-hq-deployed-40-ms-v3-continued">Table R5: target check by input SNR, D-ANC HQ deployed (40 ms, v3 continued)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>input SNR</th>
+<th>PESQ-WB</th>
+<th>PESQ-NB</th>
+<th>STOI</th>
+<th>SNR out</th>
+<th>meets SNR&gt;15</th>
+<th>STOI&gt;0.85</th>
+<th>PESQ&gt;2.5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-10 dB</td>
+<td>1.53</td>
+<td>2.05</td>
+<td>0.755</td>
+<td>6.4 dB</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>-5 dB</td>
+<td>1.77</td>
+<td>2.44</td>
+<td>0.835</td>
+<td>8.8 dB</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>0 dB</td>
+<td>2.08</td>
+<td>2.81</td>
+<td>0.889</td>
+<td>11.3 dB</td>
+<td>no</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>5 dB</td>
+<td>2.52</td>
+<td>3.23</td>
+<td>0.937</td>
+<td>14.7 dB</td>
+<td>no</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>10 dB</td>
+<td>2.92</td>
+<td>3.56</td>
+<td>0.953</td>
+<td>16.8 dB</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>15 dB</td>
+<td>3.27</td>
+<td>3.79</td>
+<td>0.975</td>
+<td>19.9 dB</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="table-r5-target-check-by-input-snr-d-anc-ll-deployed-20-ms-v2">Table R5: target check by input SNR, D-ANC LL deployed (20 ms, v2)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>input SNR</th>
+<th>PESQ-WB</th>
+<th>PESQ-NB</th>
+<th>STOI</th>
+<th>SNR out</th>
+<th>meets SNR&gt;15</th>
+<th>STOI&gt;0.85</th>
+<th>PESQ&gt;2.5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-10 dB</td>
+<td>1.42</td>
+<td>1.89</td>
+<td>0.724</td>
+<td>5.4 dB</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>-5 dB</td>
+<td>1.63</td>
+<td>2.25</td>
+<td>0.808</td>
+<td>7.8 dB</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>0 dB</td>
+<td>1.88</td>
+<td>2.59</td>
+<td>0.870</td>
+<td>10.2 dB</td>
+<td>no</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>5 dB</td>
+<td>2.29</td>
+<td>3.03</td>
+<td>0.924</td>
+<td>13.4 dB</td>
+<td>no</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>10 dB</td>
+<td>2.72</td>
+<td>3.39</td>
+<td>0.946</td>
+<td>15.6 dB</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>15 dB</td>
+<td>3.10</td>
+<td>3.65</td>
+<td>0.971</td>
+<td>18.3 dB</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table></div>
+<p><img alt="examples" loading="lazy" src="figures/defence_v1_example_spectrograms.png" /></p>
+<p><em>Example spectrograms</em> (gunfire over a tracked vehicle at 0 dB; drone at 0 dB; destroyer-ops room, gunfire and babble at 5 dB; columns: noisy, clean, DeepFilterNet3, D-ANC LL, D-ANC round-1 HQ; figure from round 1). DeepFilterNet3 deletes whole speech segments under gunfire and under drone noise, at 3.0–3.5 s and 3.4–4.5 s respectively. Both D-ANC modes keep them, leaving faint residual rotor lines. This is consistent with D-ANC's higher STOI and ESTOI.</p>
+<h3 id="82-dual-microphone-hybrid-reference-mic-nlms-dnn">8.2 Dual-microphone hybrid (reference-mic NLMS + DNN)</h3>
+<p><img alt="dual-mic" loading="lazy" src="figures/dualmic_v1_metrics_vs_snr.png" /></p>
+<h4 id="table-r6-dualmic_v1-primary-reference-microphone-240-scenes-510-db">Table R6: dualmic_v1, primary + reference microphone (240 scenes, −5…10 dB)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>PESQ-WB</th>
+<th>PESQ-NB</th>
+<th>STOI</th>
+<th>ESTOI</th>
+<th>SNR out [dB]</th>
+<th>ΔSNR [dB]</th>
+<th>SI-SDR [dB]</th>
+<th>n</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Primary mic (unprocessed)</td>
+<td>1.230</td>
+<td>1.781</td>
+<td>0.798</td>
+<td>0.617</td>
+<td>2.50</td>
+<td>0.00</td>
+<td>2.58</td>
+<td>240</td>
+</tr>
+<tr>
+<td>Log-MMSE (LSA)</td>
+<td>1.354</td>
+<td>1.953</td>
+<td>0.782</td>
+<td>0.618</td>
+<td>5.44</td>
+<td>2.94</td>
+<td>4.57</td>
+<td>240</td>
+</tr>
+<tr>
+<td>NLMS only, mu=0.3 (untuned)</td>
+<td>1.141</td>
+<td>1.567</td>
+<td>0.755</td>
+<td>0.565</td>
+<td>1.96</td>
+<td>-0.54</td>
+<td>-1.37</td>
+<td>240</td>
+</tr>
+<tr>
+<td>NLMS only (ref. mic)</td>
+<td>1.180</td>
+<td>1.649</td>
+<td>0.788</td>
+<td>0.608</td>
+<td>3.16</td>
+<td>0.66</td>
+<td>1.12</td>
+<td>240</td>
+</tr>
+<tr>
+<td>Hybrid, NO SPP gate, untuned (mu=0.3, 4 taps)</td>
+<td>1.596</td>
+<td>2.250</td>
+<td>0.842</td>
+<td>0.708</td>
+<td>4.39</td>
+<td>1.89</td>
+<td>2.35</td>
+<td>240</td>
+</tr>
+<tr>
+<td>Hybrid, NO SPP gate</td>
+<td>1.818</td>
+<td>2.512</td>
+<td>0.879</td>
+<td>0.762</td>
+<td>6.58</td>
+<td>4.08</td>
+<td>5.94</td>
+<td>240</td>
+</tr>
+<tr>
+<td>DNN only (v2 HQ base)</td>
+<td>2.167</td>
+<td>2.869</td>
+<td>0.902</td>
+<td>0.800</td>
+<td>12.12</td>
+<td>9.62</td>
+<td>12.28</td>
+<td>240</td>
+</tr>
+<tr>
+<td>Hybrid, untuned coupling (mu=0.3, 4 taps, gate exp. 2)</td>
+<td>2.308</td>
+<td>2.959</td>
+<td>0.920</td>
+<td>0.832</td>
+<td>11.09</td>
+<td>8.59</td>
+<td>11.08</td>
+<td>240</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v2 HQ base</td>
+<td>2.446</td>
+<td>3.076</td>
+<td>0.929</td>
+<td>0.850</td>
+<td>13.47</td>
+<td>10.97</td>
+<td>13.52</td>
+<td>240</td>
+</tr>
+<tr>
+<td>DNN only (v2 HQ + fine-tune)</td>
+<td>2.151</td>
+<td>2.846</td>
+<td>0.901</td>
+<td>0.800</td>
+<td>12.07</td>
+<td>9.57</td>
+<td>12.16</td>
+<td>240</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v2 HQ fine-tuned</td>
+<td>2.425</td>
+<td>3.051</td>
+<td>0.928</td>
+<td>0.849</td>
+<td>13.38</td>
+<td>10.88</td>
+<td>13.44</td>
+<td>240</td>
+</tr>
+<tr>
+<td>DNN only (LL deployed)</td>
+<td>2.047</td>
+<td>2.736</td>
+<td>0.891</td>
+<td>0.784</td>
+<td>11.44</td>
+<td>8.94</td>
+<td>11.58</td>
+<td>240</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (LL deployed)</strong></td>
+<td>2.375</td>
+<td>2.992</td>
+<td>0.923</td>
+<td>0.844</td>
+<td>13.43</td>
+<td>10.93</td>
+<td>13.42</td>
+<td>240</td>
+</tr>
+<tr>
+<td>DNN only (v3 LL)</td>
+<td>2.065</td>
+<td>2.746</td>
+<td>0.893</td>
+<td>0.788</td>
+<td>11.62</td>
+<td>9.12</td>
+<td>11.68</td>
+<td>240</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v3 LL</td>
+<td>2.373</td>
+<td>2.997</td>
+<td>0.924</td>
+<td>0.846</td>
+<td>13.32</td>
+<td>10.82</td>
+<td>13.29</td>
+<td>240</td>
+</tr>
+<tr>
+<td>DNN only (v3 HQ)</td>
+<td>2.206</td>
+<td>2.894</td>
+<td>0.905</td>
+<td>0.806</td>
+<td>12.46</td>
+<td>9.96</td>
+<td>12.47</td>
+<td>240</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v3 HQ</td>
+<td>2.471</td>
+<td>3.092</td>
+<td>0.931</td>
+<td>0.854</td>
+<td>13.47</td>
+<td>10.97</td>
+<td>13.58</td>
+<td>240</td>
+</tr>
+<tr>
+<td>DNN only (HQ deployed)</td>
+<td>2.234</td>
+<td>2.919</td>
+<td>0.907</td>
+<td>0.809</td>
+<td>12.59</td>
+<td>10.09</td>
+<td>12.60</td>
+<td>240</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (HQ deployed)</strong></td>
+<td>2.499</td>
+<td>3.121</td>
+<td>0.932</td>
+<td>0.856</td>
+<td>13.55</td>
+<td>11.05</td>
+<td>13.68</td>
+<td>240</td>
+</tr>
+<tr>
+<td>Two-mic network v3 (40 ms)</td>
+<td>2.522</td>
+<td>3.164</td>
+<td>0.923</td>
+<td>0.839</td>
+<td>13.73</td>
+<td>11.23</td>
+<td>14.03</td>
+<td>240</td>
+</tr>
+<tr>
+<td>Two-mic network v3, reference mic dead</td>
+<td>1.315</td>
+<td>1.882</td>
+<td>0.812</td>
+<td>0.650</td>
+<td>3.09</td>
+<td>0.59</td>
+<td>3.48</td>
+<td>240</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network (TWO_MIC deployed, 40 ms)</strong></td>
+<td>2.616</td>
+<td>3.202</td>
+<td>0.931</td>
+<td>0.855</td>
+<td>13.65</td>
+<td>11.15</td>
+<td>13.79</td>
+<td>240</td>
+</tr>
+<tr>
+<td>Cascade, reference mic dead</td>
+<td>1.309</td>
+<td>1.877</td>
+<td>0.811</td>
+<td>0.649</td>
+<td>3.08</td>
+<td>0.58</td>
+<td>3.46</td>
+<td>240</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="table-r7-dualmic_v1-by-input-snr">Table R7: dualmic_v1 by input SNR</h4>
+<p><em>PESQ-WB</em></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>-5 dB</th>
+<th>0 dB</th>
+<th>5 dB</th>
+<th>10 dB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Primary mic (unprocessed)</td>
+<td>1.078</td>
+<td>1.142</td>
+<td>1.257</td>
+<td>1.444</td>
+</tr>
+<tr>
+<td>NLMS only (ref. mic)</td>
+<td>1.113</td>
+<td>1.156</td>
+<td>1.214</td>
+<td>1.236</td>
+</tr>
+<tr>
+<td>DNN only (v2 HQ + fine-tune)</td>
+<td>1.558</td>
+<td>1.992</td>
+<td>2.290</td>
+<td>2.765</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v2 HQ fine-tuned</td>
+<td>1.834</td>
+<td>2.301</td>
+<td>2.591</td>
+<td>2.974</td>
+</tr>
+<tr>
+<td>DNN only (LL deployed)</td>
+<td>1.471</td>
+<td>1.878</td>
+<td>2.154</td>
+<td>2.685</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (LL deployed)</strong></td>
+<td>1.774</td>
+<td>2.227</td>
+<td>2.521</td>
+<td>2.977</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (HQ deployed)</strong></td>
+<td>1.930</td>
+<td>2.352</td>
+<td>2.635</td>
+<td>3.079</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v3 HQ</td>
+<td>1.904</td>
+<td>2.327</td>
+<td>2.613</td>
+<td>3.042</td>
+</tr>
+<tr>
+<td>Two-mic network v3 (40 ms)</td>
+<td>1.819</td>
+<td>2.349</td>
+<td>2.680</td>
+<td>3.240</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network (TWO_MIC deployed, 40 ms)</strong></td>
+<td>1.905</td>
+<td>2.483</td>
+<td>2.788</td>
+<td>3.290</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>STOI</em></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>-5 dB</th>
+<th>0 dB</th>
+<th>5 dB</th>
+<th>10 dB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Primary mic (unprocessed)</td>
+<td>0.655</td>
+<td>0.773</td>
+<td>0.858</td>
+<td>0.906</td>
+</tr>
+<tr>
+<td>NLMS only (ref. mic)</td>
+<td>0.708</td>
+<td>0.783</td>
+<td>0.831</td>
+<td>0.829</td>
+</tr>
+<tr>
+<td>DNN only (v2 HQ + fine-tune)</td>
+<td>0.824</td>
+<td>0.892</td>
+<td>0.935</td>
+<td>0.954</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v2 HQ fine-tuned</td>
+<td>0.877</td>
+<td>0.921</td>
+<td>0.951</td>
+<td>0.964</td>
+</tr>
+<tr>
+<td>DNN only (LL deployed)</td>
+<td>0.805</td>
+<td>0.881</td>
+<td>0.926</td>
+<td>0.951</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (LL deployed)</strong></td>
+<td>0.865</td>
+<td>0.916</td>
+<td>0.948</td>
+<td>0.963</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (HQ deployed)</strong></td>
+<td>0.884</td>
+<td>0.925</td>
+<td>0.953</td>
+<td>0.966</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v3 HQ</td>
+<td>0.881</td>
+<td>0.924</td>
+<td>0.952</td>
+<td>0.965</td>
+</tr>
+<tr>
+<td>Two-mic network v3 (40 ms)</td>
+<td>0.865</td>
+<td>0.915</td>
+<td>0.948</td>
+<td>0.964</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network (TWO_MIC deployed, 40 ms)</strong></td>
+<td>0.878</td>
+<td>0.925</td>
+<td>0.954</td>
+<td>0.967</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>output SNR [dB]</em></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>-5 dB</th>
+<th>0 dB</th>
+<th>5 dB</th>
+<th>10 dB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Primary mic (unprocessed)</td>
+<td>-5.00</td>
+<td>0.00</td>
+<td>5.00</td>
+<td>10.00</td>
+</tr>
+<tr>
+<td>NLMS only (ref. mic)</td>
+<td>0.14</td>
+<td>3.41</td>
+<td>4.75</td>
+<td>4.34</td>
+</tr>
+<tr>
+<td>DNN only (v2 HQ + fine-tune)</td>
+<td>7.68</td>
+<td>10.64</td>
+<td>13.11</td>
+<td>16.86</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v2 HQ fine-tuned</td>
+<td>9.96</td>
+<td>12.67</td>
+<td>14.51</td>
+<td>16.38</td>
+</tr>
+<tr>
+<td>DNN only (LL deployed)</td>
+<td>7.10</td>
+<td>10.01</td>
+<td>12.53</td>
+<td>16.11</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (LL deployed)</strong></td>
+<td>9.57</td>
+<td>12.54</td>
+<td>14.63</td>
+<td>16.97</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (HQ deployed)</strong></td>
+<td>10.40</td>
+<td>12.91</td>
+<td>14.44</td>
+<td>16.45</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v3 HQ</td>
+<td>10.33</td>
+<td>12.85</td>
+<td>14.37</td>
+<td>16.33</td>
+</tr>
+<tr>
+<td>Two-mic network v3 (40 ms)</td>
+<td>9.36</td>
+<td>12.39</td>
+<td>14.70</td>
+<td>18.46</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network (TWO_MIC deployed, 40 ms)</strong></td>
+<td>10.51</td>
+<td>13.29</td>
+<td>14.49</td>
+<td>16.32</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="table-r8-share-of-dualmic_v1-scenes-meeting-each-target">Table R8: share of dualmic_v1 scenes meeting each target</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>SNR&gt;15 dB</th>
+<th>STOI&gt;0.85</th>
+<th>PESQ-WB&gt;2.5</th>
+<th>all three</th>
+<th>PESQ-NB&gt;4</th>
+<th>PESQ-WB&gt;4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Primary mic (unprocessed)</td>
+<td>0.0%</td>
+<td>42.9%</td>
+<td>0.4%</td>
+<td>0.0%</td>
+<td>0.4%</td>
+<td>0.0%</td>
+</tr>
+<tr>
+<td>NLMS only (ref. mic)</td>
+<td>0.0%</td>
+<td>29.2%</td>
+<td>0.0%</td>
+<td>0.0%</td>
+<td>0.0%</td>
+<td>0.0%</td>
+</tr>
+<tr>
+<td>DNN only (v2 HQ + fine-tune)</td>
+<td>21.2%</td>
+<td>77.9%</td>
+<td>27.9%</td>
+<td>15.4%</td>
+<td>2.9%</td>
+<td>0.4%</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v2 HQ fine-tuned</td>
+<td>32.5%</td>
+<td>88.3%</td>
+<td>45.0%</td>
+<td>28.3%</td>
+<td>2.9%</td>
+<td>0.4%</td>
+</tr>
+<tr>
+<td>DNN only (LL deployed)</td>
+<td>19.2%</td>
+<td>75.0%</td>
+<td>23.3%</td>
+<td>11.7%</td>
+<td>2.5%</td>
+<td>0.4%</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (LL deployed)</strong></td>
+<td>31.7%</td>
+<td>87.9%</td>
+<td>41.2%</td>
+<td>26.7%</td>
+<td>3.3%</td>
+<td>0.4%</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (HQ deployed)</strong></td>
+<td>31.2%</td>
+<td>90.0%</td>
+<td>49.2%</td>
+<td>26.7%</td>
+<td>3.3%</td>
+<td>0.8%</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v3 HQ</td>
+<td>31.7%</td>
+<td>89.2%</td>
+<td>48.3%</td>
+<td>27.5%</td>
+<td>2.9%</td>
+<td>0.8%</td>
+</tr>
+<tr>
+<td>Two-mic network v3 (40 ms)</td>
+<td>37.9%</td>
+<td>86.2%</td>
+<td>50.4%</td>
+<td>34.2%</td>
+<td>8.3%</td>
+<td>1.7%</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network (TWO_MIC deployed, 40 ms)</strong></td>
+<td>34.2%</td>
+<td>89.2%</td>
+<td>55.4%</td>
+<td>31.7%</td>
+<td>7.5%</td>
+<td>1.2%</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Findings.</strong>
+1. <strong>NLMS alone barely helps.</strong> It gains +0.7 dB output SNR on average, but lowers PESQ (1.18 vs 1.23), STOI (0.788 vs 0.798) and SI-SDR, and lowers SNR at ≥ 5 dB input. The talker leaks into the reference mic at −25…−12 dB, and part of the noise field is diffuse. Untuned (μ = 0.3) it is worse than doing nothing (−0.5 dB, SI-SDR −1.4 dB), which is Widrow's speech-cancellation effect [V].
+2. <strong>Without the speech-presence gate, the hybrid is far worse than DNN-only</strong> (PESQ 1.82 vs 2.17, both HQ base).
+3. <strong>(Round-1 models.) With the gate, and the coupling tuned on a separate validation set</strong> (<code>dualmic_val</code>: μ = 0.1, 2 taps, gate exponent 4), the hybrid beats DNN-only on PESQ-WB and STOI at every input SNR, and on output SNR from −5 to 5 dB. At 10 dB the HQ hybrid's output SNR is 0.5 dB below DNN-only (16.4 vs 16.9 dB); the LL hybrid is higher at every SNR. It gains +0.27 PESQ-WB, +0.027 STOI and +1.3 dB SNR overall, and +2.3 dB SNR and +0.05 STOI at −5 dB.
+4. With the reference mic, the 20 ms LL hybrid almost matches the 40 ms HQ hybrid (13.4 dB SNR for both; round-1 models).</p>
+<p><em>Tuning hygiene:</em>
+- <strong>Exploratory sweep.</strong> It was run first on 48 scenes of the test set, before the problem of tuning on test data was recognised (<code>logs/tune_hybrid_on_test_subset_EXPLORATORY.out</code>).
+- <strong>First validation grid.</strong> The setting was then selected on the validation scenes (<code>dualmic_val</code>: validation speakers, training-split noise). This grid varied μ, taps and a hard gate threshold, with the gate exponent fixed at 4 from the exploratory sweep.
+- <strong>Second validation grid.</strong> The internal audit flagged the fixed exponent, so a second grid also varied it (2 vs 4).
+- <strong>Result.</strong> Both validation grids select the deployed setting: μ = 0.1, 2 taps, exponent 4, no hard threshold (<code>reports/results/dualmic_val/hybrid_tuning*.json</code>). The exploratory test-subset optimum differed only by a hard threshold of 0.3, which costs 0.003 PESQ on validation.</p>
+<h3 id="83-cross-corpus-check-voicebankdemand-civilian-benchmark-and-transparency">8.3 Cross-corpus check: VoiceBank+DEMAND (civilian benchmark) and transparency</h3>
+<h4 id="table-r9-voicebankdemand-test-824-files-civilian-benchmark-not-defence-noise">Table R9: VoiceBank+DEMAND test (824 files; civilian benchmark, not defence noise)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>PESQ-WB</th>
+<th>PESQ-NB</th>
+<th>STOI</th>
+<th>ESTOI</th>
+<th>SNR out [dB]</th>
+<th>ΔSNR [dB]</th>
+<th>SI-SDR [dB]</th>
+<th>n</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Noisy input</td>
+<td>1.971</td>
+<td>2.946</td>
+<td>0.921</td>
+<td>0.787</td>
+<td>8.45</td>
+<td>0.00</td>
+<td>8.45</td>
+<td>824</td>
+</tr>
+<tr>
+<td>Log-MMSE (LSA)</td>
+<td>2.277</td>
+<td>3.152</td>
+<td>0.903</td>
+<td>0.774</td>
+<td>13.46</td>
+<td>5.02</td>
+<td>13.24</td>
+<td>824</td>
+</tr>
+<tr>
+<td>DeepFilterNet3 (public, 40 ms)</td>
+<td>2.705</td>
+<td>3.494</td>
+<td>0.925</td>
+<td>0.840</td>
+<td>16.33</td>
+<td>7.88</td>
+<td>17.25</td>
+<td>824</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ base (40 ms)</td>
+<td>2.296</td>
+<td>3.242</td>
+<td>0.907</td>
+<td>0.801</td>
+<td>16.95</td>
+<td>8.50</td>
+<td>17.71</td>
+<td>824</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>2.425</td>
+<td>3.382</td>
+<td>0.919</td>
+<td>0.821</td>
+<td>17.59</td>
+<td>9.14</td>
+<td>18.08</td>
+<td>824</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>2.214</td>
+<td>3.129</td>
+<td>0.904</td>
+<td>0.793</td>
+<td>16.13</td>
+<td>7.69</td>
+<td>17.05</td>
+<td>824</td>
+</tr>
+<tr>
+<td>D-ANC v2 LL fine-tuned (not adopted)</td>
+<td>2.352</td>
+<td>3.287</td>
+<td>0.917</td>
+<td>0.815</td>
+<td>16.77</td>
+<td>8.33</td>
+<td>17.62</td>
+<td>824</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>2.401</td>
+<td>3.329</td>
+<td>0.916</td>
+<td>0.817</td>
+<td>16.95</td>
+<td>8.50</td>
+<td>17.66</td>
+<td>824</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>2.472</td>
+<td>3.424</td>
+<td>0.918</td>
+<td>0.823</td>
+<td>17.79</td>
+<td>9.34</td>
+<td>18.21</td>
+<td>824</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>2.485</td>
+<td>3.448</td>
+<td>0.919</td>
+<td>0.826</td>
+<td>17.99</td>
+<td>9.54</td>
+<td>18.35</td>
+<td>824</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="table-r10-transparency-clean-speech-in-model-compared-with-the-input">Table R10: transparency (clean speech in → model → compared with the input)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>VoiceBank clean PESQ-WB / STOI / SI-SDR</th>
+<th>LibriSpeech clean PESQ-WB / STOI / SI-SDR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>hq</td>
+<td>2.98 / 0.940 / 20.9</td>
+<td>4.45 / 0.996 / 31.3</td>
+</tr>
+<tr>
+<td>hq_metric</td>
+<td>3.56 / 0.960 / 23.9</td>
+<td>4.47 / 0.997 / 33.9</td>
+</tr>
+<tr>
+<td>ll</td>
+<td>2.66 / 0.935 / 19.9</td>
+<td>4.41 / 0.996 / 28.1</td>
+</tr>
+<tr>
+<td>ll_metric</td>
+<td>3.27 / 0.957 / 22.8</td>
+<td>4.46 / 0.996 / 30.2</td>
+</tr>
+<tr>
+<td>v3hq</td>
+<td>3.57 / 0.958 / 25.0</td>
+<td>4.51 / 0.997 / 36.5</td>
+</tr>
+<tr>
+<td>v3hq_cont</td>
+<td>3.61 / 0.960 / 24.9</td>
+<td>4.52 / 0.997 / 37.8</td>
+</tr>
+<tr>
+<td>v3ll</td>
+<td>3.32 / 0.954 / 23.5</td>
+<td>4.47 / 0.996 / 30.7</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Interpretation.</strong>
+- On mild civilian noise the base models improved SNR and SI-SDR but <em>lowered</em> STOI below the unprocessed input at input SNR above about 5 dB, and were not transparent on clean VoiceBank speech (PESQ 2.98 on clean input).
+- Diagnosis: VoiceBank talkers are darker (−24 dB vs −18 dB energy above 4 kHz) and their "clean" references carry a higher noise floor than LibriSpeech.
+- The timbre/bandwidth and clean-only augmentation in the final stage fixed most of this: transparency PESQ 3.56 and STOI 0.960, VoiceBank STOI 0.919.
+  - The round-1 HQ still sat 0.002 below the unprocessed input on VoiceBank STOI overall (0.919 vs 0.921), and below it above 10 dB input. The round-2 HQ (0.919, PESQ-WB 2.485) is 0.0017 below.
+- DeepFilterNet3 has the best VoiceBank PESQ, STOI and ESTOI; VCTK speech is part of its training data [N]. D-ANC has the best output SNR and SI-SDR there.
+- <strong>Lesson for fielding:</strong> collect enrolment or validation speech from the actual headset microphones and the user population (§9, R1).</p>
+<h3 id="84-ablations-and-design-checks">8.4 Ablations and design checks</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Evidence</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Does look-ahead help?</td>
+<td>Table R1: round-1 HQ vs LL (both v2); Table R13 (equal training)</td>
+<td>+0.11 PESQ-WB, +0.01 STOI, +0.9 dB SNR for 20 ms more latency; in the controlled ablation +0.087 PESQ-WB, +0.007 STOI</td>
+</tr>
+<tr>
+<td>Is speech-presence gating of the NLMS necessary?</td>
+<td>Table R6</td>
+<td>Yes. Ungated hybrid: PESQ 1.82 vs 2.45 gated (HQ base)</td>
+</tr>
+<tr>
+<td>Does NLMS tuning matter?</td>
+<td>Table R6, <code>hybrid_tuning*.json</code></td>
+<td>μ 0.3 → 0.1, taps 4 → 2 and gate exponent 2 → 4 together: +0.14 PESQ, +2.4 dB SNR</td>
+</tr>
+<tr>
+<td>Does the DNN beat classical enhancement?</td>
+<td>Tables R1–R3</td>
+<td>Log-MMSE/Wiener/spectral subtraction give +2 dB SNR and <em>lower</em> STOI. The DNN gives +10 dB SNR and +0.10 STOI</td>
+</tr>
+<tr>
+<td>Robustness fine-tune</td>
+<td>Tables R9, R10</td>
+<td>Transparency and generalisation up; defence metrics unchanged (HQ adopted)</td>
+</tr>
+<tr>
+<td>Hard cases (impulsive)</td>
+<td>Table R3, figure</td>
+<td>Impulsive scenes are the <em>best</em> category (round-1 HQ: PESQ 2.82, STOI 0.947, SNR 16.0 dB). The median normaliser, the look-ahead and the clipping augmentation target exactly these cases.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Round 1 flagged</strong> isolated ablations of the median normaliser and of the deep filter as not done. <strong>They were run in round 2:</strong> see §8.8 (Table R13). Look-ahead and the PMSQE loss were confirmed. The median normaliser and the deep filter showed no measurable benefit.</p>
+<h3 id="85-prototype-run-simulated-live">8.5 Prototype run (simulated live)</h3>
+<p>The round-1 deployed HQ engine processed four dual-mic scenes (impulsive 0 dB, non-stationary −5 dB, mixed 5 dB, stationary 0 dB) block by block on a real-time clock, with zero deadline misses.</p>
+<p><strong>Round 2.</strong> The same four scenes went through the round-2 deployed configurations, via the torch-free Jetson launcher (<code>danc_live.py</code>) and, for TWO_MIC, also the development launcher (<code>danc.inference.realtime</code>). Script: <code>scripts/simulated_live_round2.py</code>; results: <code>reports/results/simulated_live_runs_round2.json</code>; raw output: <code>logs/simulated_live_round2/</code>. The Mac was a macOS desktop with no real-time priority or core pinning:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Per-block mean</th>
+<th>p99</th>
+<th>max</th>
+<th>Late blocks (paced)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HQ (v3 continued)</td>
+<td>2.74–2.78 ms</td>
+<td>4.0–4.3 ms</td>
+<td>5.1 ms</td>
+<td>0 of 2 360</td>
+</tr>
+<tr>
+<td>LL</td>
+<td>2.40–2.51 ms</td>
+<td>3.5–3.8 ms</td>
+<td>5.3 ms</td>
+<td>0 of 2 360</td>
+</tr>
+<tr>
+<td>TWO_MIC (cascade + hot standby), both launchers</td>
+<td>3.1–4.1 ms</td>
+<td>4.7–6.2 ms</td>
+<td>12.4 ms</td>
+<td>2 of 4 720</td>
+</tr>
+<tr>
+<td>TWO_MIC, saved repeat of 12 runs (<code>repeat_two_mic_paced.txt</code>)</td>
+<td>3.8–4.0 ms</td>
+<td>5.8–6.1 ms</td>
+<td>7.5 ms</td>
+<td>0 of 7 080</td>
+</tr>
+</tbody>
+</table></div>
+<p>The two late blocks came in one run on one scene, and that run's slowest block took 12.4 ms. An unsaved spot check showed 2 late blocks on the same scene, with processing under 7.5 ms, so they come from OS scheduling between blocks, not from slow processing. <strong>The two-network configuration has the least real-time margin.</strong> On the Jetson it must run with SCHED_FIFO and pinned cores and pass <code>--strict-timing</code> and the 10-minute acceptance run (QUICKSTART steps 5 and 11). The listening set in <code>reports/audio/demo/</code> has, per scene, the clean reference, the noisy primary mic, and the HQ and LL hybrid outputs.</p>
+<h3 id="86-edge-cases-defence_edge_v1-table-r11">8.6 Edge cases (<code>defence_edge_v1</code>, Table R11)</h3>
+<p><img alt="Edge cases" loading="lazy" src="figures/round2_edge_cases.png" /></p>
+<h4 id="table-r11-edge-case-set-defence_edge_v1">Table R11: edge-case set defence_edge_v1</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Noisy input</th>
+<th>Log-MMSE (LSA)</th>
+<th><strong>D-ANC LL deployed (20 ms, v2)</strong></th>
+<th>D-ANC v2 HQ + fine-tune (40 ms)</th>
+<th>D-ANC v3 LL (20 ms)</th>
+<th>D-ANC v3 HQ (40 ms)</th>
+<th><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>clip_heavy</td>
+<td>1.31 / 1.77 / 0.815 / 2.4</td>
+<td>1.30 / 1.82 / 0.794 / 3.2</td>
+<td>1.98 / 2.67 / 0.902 / 10.0</td>
+<td>2.13 / 2.83 / 0.915 / 10.7</td>
+<td>2.00 / 2.71 / 0.905 / 10.6</td>
+<td>2.16 / 2.91 / 0.917 / 11.4</td>
+<td>2.19 / 2.92 / 0.919 / 11.5</td>
+</tr>
+<tr>
+<td>level_low</td>
+<td>1.31 / 1.97 / 0.815 / 4.2</td>
+<td>1.40 / 2.13 / 0.802 / 6.5</td>
+<td>2.31 / 3.02 / 0.910 / 12.8</td>
+<td>2.46 / 3.16 / 0.919 / 13.5</td>
+<td>2.31 / 3.02 / 0.912 / 12.8</td>
+<td>2.50 / 3.18 / 0.922 / 13.7</td>
+<td>2.53 / 3.21 / 0.923 / 13.9</td>
+</tr>
+<tr>
+<td>level_high</td>
+<td>1.26 / 1.94 / 0.865 / 6.6</td>
+<td>1.41 / 2.18 / 0.849 / 8.6</td>
+<td>2.46 / 3.13 / 0.940 / 14.1</td>
+<td>2.61 / 3.27 / 0.947 / 15.1</td>
+<td>2.46 / 3.14 / 0.941 / 14.0</td>
+<td>2.68 / 3.33 / 0.948 / 15.2</td>
+<td>2.71 / 3.36 / 0.949 / 15.1</td>
+</tr>
+<tr>
+<td>reverb_cabin</td>
+<td>1.23 / 1.89 / 0.810 / 4.1</td>
+<td>1.40 / 2.09 / 0.794 / 7.2</td>
+<td>1.97 / 2.66 / 0.868 / 9.8</td>
+<td>2.07 / 2.74 / 0.877 / 10.3</td>
+<td>1.99 / 2.70 / 0.870 / 10.1</td>
+<td>2.08 / 2.78 / 0.878 / 10.5</td>
+<td>2.10 / 2.79 / 0.880 / 10.6</td>
+</tr>
+<tr>
+<td>radio_band</td>
+<td>1.99 / 2.27 / 0.895 / 9.9</td>
+<td>2.11 / 2.48 / 0.871 / 10.7</td>
+<td>2.34 / 2.82 / 0.924 / 14.5</td>
+<td>2.69 / 3.09 / 0.944 / 16.1</td>
+<td>2.61 / 2.97 / 0.941 / 15.0</td>
+<td>2.76 / 3.11 / 0.948 / 16.4</td>
+<td>2.78 / 3.13 / 0.949 / 16.4</td>
+</tr>
+<tr>
+<td>post_blast</td>
+<td>1.10 / 1.58 / 0.759 / -7.4</td>
+<td>1.11 / 1.68 / 0.747 / -7.1</td>
+<td>2.00 / 2.86 / 0.895 / 10.7</td>
+<td>2.10 / 3.00 / 0.906 / 11.6</td>
+<td>2.03 / 2.87 / 0.898 / 10.9</td>
+<td>2.13 / 3.04 / 0.909 / 11.7</td>
+<td>2.16 / 3.05 / 0.911 / 11.8</td>
+</tr>
+<tr>
+<td>noise_switch</td>
+<td>1.12 / 1.64 / 0.777 / 1.5</td>
+<td>1.15 / 1.72 / 0.756 / 3.6</td>
+<td>1.89 / 2.61 / 0.890 / 10.6</td>
+<td>2.02 / 2.75 / 0.901 / 11.2</td>
+<td>1.89 / 2.64 / 0.892 / 10.7</td>
+<td>2.07 / 2.82 / 0.903 / 11.5</td>
+<td>2.09 / 2.85 / 0.905 / 11.5</td>
+</tr>
+<tr>
+<td>hum400</td>
+<td>1.23 / 1.70 / 0.825 / 1.4</td>
+<td>1.49 / 2.02 / 0.850 / 8.8</td>
+<td>2.30 / 2.97 / 0.928 / 11.4</td>
+<td>2.44 / 3.07 / 0.936 / 12.1</td>
+<td>2.38 / 3.06 / 0.931 / 11.6</td>
+<td>2.51 / 3.17 / 0.939 / 12.0</td>
+<td>2.55 / 3.20 / 0.940 / 12.2</td>
+</tr>
+<tr>
+<td>crew_babble</td>
+<td>1.10 / 1.53 / 0.725 / 2.4</td>
+<td>1.15 / 1.59 / 0.693 / 4.4</td>
+<td>1.23 / 1.71 / 0.741 / 4.4</td>
+<td>1.23 / 1.74 / 0.749 / 4.6</td>
+<td>1.24 / 1.72 / 0.744 / 4.5</td>
+<td>1.24 / 1.74 / 0.750 / 4.7</td>
+<td>1.25 / 1.75 / 0.753 / 4.7</td>
+</tr>
+<tr>
+<td>long_stream</td>
+<td>1.16 / 1.67 / 0.836 / 2.8</td>
+<td>1.28 / 1.88 / 0.823 / 4.8</td>
+<td>2.30 / 2.98 / 0.919 / 11.5</td>
+<td>2.49 / 3.13 / 0.930 / 12.3</td>
+<td>2.31 / 3.00 / 0.923 / 11.8</td>
+<td>2.52 / 3.18 / 0.933 / 12.6</td>
+<td>2.55 / 3.20 / 0.935 / 12.7</td>
+</tr>
+<tr>
+<td>noise_only</td>
+<td>attenuation 0.0 dB</td>
+<td>attenuation 4.3 dB</td>
+<td>attenuation 36.9 dB</td>
+<td>attenuation 40.3 dB</td>
+<td>attenuation 35.3 dB</td>
+<td>attenuation 42.1 dB</td>
+<td>attenuation 43.0 dB</td>
+</tr>
+<tr>
+<td>post_blast (2 s after the blast)</td>
+<td>recovery STOI 0.669</td>
+<td>recovery STOI 0.663</td>
+<td>recovery STOI 0.820</td>
+<td>recovery STOI 0.835</td>
+<td>recovery STOI 0.827</td>
+<td>recovery STOI 0.839</td>
+<td>recovery STOI 0.841</td>
+</tr>
+</tbody>
+</table></div>
+<p>Cells: PESQ-WB / PESQ-NB / STOI / output SNR [dB], mean over 30 files per case (4 × 60 s for long_stream).</p>
+<p>The deployed round-1 and round-2 models, v3 HQ/LL and three ablation arms were evaluated on the 11 edge cases (<code>scripts/eval_edge.py</code> → <code>reports/results/defence_edge_v1/</code>). Below, STOI and PESQ-WB are given as unprocessed → round-1 HQ → <strong>deployed round-2 HQ</strong>. The round-2 HQ model is better than round 1 in every case.</p>
+<ul>
+<li><strong>Robust (STOI ≥ 0.90 after processing, gains like the main test set):</strong></li>
+<li><strong>Heavy clipping:</strong> STOI 0.815 → 0.915 → <strong>0.919</strong>; PESQ-WB 1.31 → 2.13 → <strong>2.19</strong>. The clipping augmentation works, although clipping destroys information and the target is the unclipped speech.</li>
+<li><strong>Very quiet talker (−45 dBFS):</strong> 0.815 → 0.919 → 0.923; PESQ-WB 2.53, the same as at normal level. The input normaliser makes the network level-invariant.</li>
+<li><strong>Hot mic gain:</strong> 0.865 → 0.947 → 0.949; PESQ-WB 2.71.</li>
+<li><strong>Radio band (300–3400 Hz):</strong> 0.895 → 0.944 → 0.949; PESQ-WB 2.78. The 20 ms LL model loses more here (STOI 0.924, PESQ-WB 2.34).</li>
+<li><strong>After an explosion 25–35 dB above the talker:</strong> 0.759 → 0.906 → 0.911. In the 2 s after the blast STOI recovers to 0.841, against 0.669 unprocessed. The normaliser and recurrent state do not lock up.</li>
+<li><strong>Abrupt noise changes:</strong> 0.777 → 0.901 → 0.905.</li>
+<li><strong>400 Hz hum + 50 Hz mains:</strong> 0.825 → 0.936 → 0.940; PESQ-WB 2.55.</li>
+<li><strong>60 s continuous streams:</strong> 0.836 → 0.930 → 0.935, with no drift.</li>
+<li><strong>Noise only:</strong> the output stays 43.0 dB below the input (round 1: 40.3 dB). Nothing is hallucinated.</li>
+<li><strong>Weaker:</strong></li>
+<li><strong>Far-field talker in a reverberant cabin:</strong> 0.810 → 0.877 → 0.880, PESQ-WB 2.10. The target is the direct path + 50 ms, so this case needs dereverberation. Far-field speech reverb was not in training (near-field only, p = 0.25), and the networks learned it only partly.</li>
+<li><strong>Crew babble, single microphone:</strong> 0.725 → 0.749 → 0.753, PESQ-WB 1.10 → 1.23 → 1.25. <strong>This is the one case where the single-mic system barely helps.</strong> With one microphone, a nearby crew member's speech is the same kind of signal as the wearer's, and nothing tells the network which talker to keep. §8.10 shows that the reference microphone largely addresses it: on the dual-mic crew-babble scenes the two-mic cascade reaches STOI 0.904 (PESQ-WB 2.06).</li>
+</ul>
+<h3 id="87-pesq-32535-owners-round-2-request-where-it-is-and-is-not-reached">8.7 PESQ 3.25–3.5 (owner's round-2 request): where it is and is not reached</h3>
+<p><img alt="PESQ attainment" loading="lazy" src="figures/round2_pesq_attainment.png" /></p>
+<h4 id="table-r12a-pesq-attainment-by-input-snr-defence_v1-single-mic-defence_highsnr_v1-20-25-db">Table R12a: PESQ attainment by input SNR, defence_v1 (single mic) + defence_highsnr_v1 (20, 25 dB)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>input SNR</th>
+<th>PESQ-WB mean</th>
+<th>PESQ-NB mean</th>
+<th>WB ≥ 3.25</th>
+<th>WB ≥ 3.5</th>
+<th>NB ≥ 3.25</th>
+<th>NB ≥ 3.5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>-10 dB</td>
+<td>1.53</td>
+<td>2.05</td>
+<td>3%</td>
+<td>2%</td>
+<td>6%</td>
+<td>3%</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>-5 dB</td>
+<td>1.77</td>
+<td>2.44</td>
+<td>3%</td>
+<td>3%</td>
+<td>14%</td>
+<td>9%</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>0 dB</td>
+<td>2.08</td>
+<td>2.81</td>
+<td>6%</td>
+<td>4%</td>
+<td>24%</td>
+<td>16%</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>5 dB</td>
+<td>2.52</td>
+<td>3.23</td>
+<td>12%</td>
+<td>10%</td>
+<td>40%</td>
+<td>31%</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>10 dB</td>
+<td>2.92</td>
+<td>3.56</td>
+<td>24%</td>
+<td>14%</td>
+<td>77%</td>
+<td>57%</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>15 dB</td>
+<td>3.27</td>
+<td>3.79</td>
+<td>51%</td>
+<td>30%</td>
+<td>98%</td>
+<td>86%</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>20 dB</td>
+<td>3.59</td>
+<td>3.99</td>
+<td>89%</td>
+<td>70%</td>
+<td>99%</td>
+<td>99%</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>25 dB</td>
+<td>3.72</td>
+<td>4.08</td>
+<td>92%</td>
+<td>72%</td>
+<td>100%</td>
+<td>99%</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>-10 dB</td>
+<td>1.42</td>
+<td>1.89</td>
+<td>1%</td>
+<td>1%</td>
+<td>3%</td>
+<td>2%</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>-5 dB</td>
+<td>1.63</td>
+<td>2.25</td>
+<td>2%</td>
+<td>2%</td>
+<td>11%</td>
+<td>5%</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>0 dB</td>
+<td>1.88</td>
+<td>2.59</td>
+<td>3%</td>
+<td>3%</td>
+<td>15%</td>
+<td>10%</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>5 dB</td>
+<td>2.29</td>
+<td>3.03</td>
+<td>9%</td>
+<td>4%</td>
+<td>32%</td>
+<td>22%</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>10 dB</td>
+<td>2.72</td>
+<td>3.39</td>
+<td>15%</td>
+<td>7%</td>
+<td>63%</td>
+<td>35%</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>15 dB</td>
+<td>3.10</td>
+<td>3.65</td>
+<td>34%</td>
+<td>16%</td>
+<td>91%</td>
+<td>70%</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>20 dB</td>
+<td>3.43</td>
+<td>3.89</td>
+<td>75%</td>
+<td>44%</td>
+<td>99%</td>
+<td>96%</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>25 dB</td>
+<td>3.65</td>
+<td>4.03</td>
+<td>90%</td>
+<td>69%</td>
+<td>100%</td>
+<td>99%</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>-10 dB</td>
+<td>1.50</td>
+<td>2.01</td>
+<td>2%</td>
+<td>2%</td>
+<td>4%</td>
+<td>3%</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>-5 dB</td>
+<td>1.71</td>
+<td>2.37</td>
+<td>3%</td>
+<td>2%</td>
+<td>12%</td>
+<td>6%</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>0 dB</td>
+<td>2.01</td>
+<td>2.73</td>
+<td>4%</td>
+<td>3%</td>
+<td>19%</td>
+<td>12%</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>5 dB</td>
+<td>2.44</td>
+<td>3.16</td>
+<td>12%</td>
+<td>8%</td>
+<td>39%</td>
+<td>24%</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>10 dB</td>
+<td>2.85</td>
+<td>3.49</td>
+<td>21%</td>
+<td>11%</td>
+<td>71%</td>
+<td>50%</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>15 dB</td>
+<td>3.19</td>
+<td>3.73</td>
+<td>45%</td>
+<td>22%</td>
+<td>97%</td>
+<td>79%</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>20 dB</td>
+<td>3.49</td>
+<td>3.94</td>
+<td>84%</td>
+<td>49%</td>
+<td>99%</td>
+<td>96%</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>25 dB</td>
+<td>3.68</td>
+<td>4.06</td>
+<td>91%</td>
+<td>72%</td>
+<td>100%</td>
+<td>99%</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>-10 dB</td>
+<td>1.43</td>
+<td>1.91</td>
+<td>2%</td>
+<td>1%</td>
+<td>3%</td>
+<td>3%</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>-5 dB</td>
+<td>1.64</td>
+<td>2.26</td>
+<td>3%</td>
+<td>2%</td>
+<td>9%</td>
+<td>6%</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>0 dB</td>
+<td>1.91</td>
+<td>2.61</td>
+<td>4%</td>
+<td>3%</td>
+<td>14%</td>
+<td>11%</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>5 dB</td>
+<td>2.33</td>
+<td>3.05</td>
+<td>11%</td>
+<td>6%</td>
+<td>34%</td>
+<td>21%</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>10 dB</td>
+<td>2.74</td>
+<td>3.40</td>
+<td>19%</td>
+<td>8%</td>
+<td>63%</td>
+<td>37%</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>15 dB</td>
+<td>3.10</td>
+<td>3.67</td>
+<td>32%</td>
+<td>17%</td>
+<td>93%</td>
+<td>72%</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>20 dB</td>
+<td>3.44</td>
+<td>3.89</td>
+<td>79%</td>
+<td>42%</td>
+<td>99%</td>
+<td>92%</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>25 dB</td>
+<td>3.65</td>
+<td>4.03</td>
+<td>89%</td>
+<td>68%</td>
+<td>100%</td>
+<td>99%</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>-10 dB</td>
+<td>1.51</td>
+<td>2.04</td>
+<td>2%</td>
+<td>2%</td>
+<td>6%</td>
+<td>3%</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>-5 dB</td>
+<td>1.75</td>
+<td>2.41</td>
+<td>3%</td>
+<td>3%</td>
+<td>14%</td>
+<td>8%</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>0 dB</td>
+<td>2.05</td>
+<td>2.78</td>
+<td>6%</td>
+<td>3%</td>
+<td>22%</td>
+<td>12%</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>5 dB</td>
+<td>2.49</td>
+<td>3.21</td>
+<td>12%</td>
+<td>9%</td>
+<td>40%</td>
+<td>28%</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>10 dB</td>
+<td>2.88</td>
+<td>3.53</td>
+<td>24%</td>
+<td>12%</td>
+<td>76%</td>
+<td>54%</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>15 dB</td>
+<td>3.24</td>
+<td>3.77</td>
+<td>48%</td>
+<td>24%</td>
+<td>98%</td>
+<td>86%</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>20 dB</td>
+<td>3.56</td>
+<td>3.97</td>
+<td>86%</td>
+<td>66%</td>
+<td>99%</td>
+<td>99%</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>25 dB</td>
+<td>3.69</td>
+<td>4.06</td>
+<td>90%</td>
+<td>70%</td>
+<td>100%</td>
+<td>98%</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="table-r12b-pesq-attainment-by-input-snr-dualmic_v1-primary-reference-mic">Table R12b: PESQ attainment by input SNR, dualmic_v1 (primary + reference mic)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>input SNR</th>
+<th>PESQ-WB mean</th>
+<th>PESQ-NB mean</th>
+<th>WB ≥ 3.25</th>
+<th>WB ≥ 3.5</th>
+<th>NB ≥ 3.25</th>
+<th>NB ≥ 3.5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DNN only (HQ deployed)</td>
+<td>-5 dB</td>
+<td>1.62</td>
+<td>2.28</td>
+<td>0%</td>
+<td>0%</td>
+<td>3%</td>
+<td>2%</td>
+</tr>
+<tr>
+<td>DNN only (HQ deployed)</td>
+<td>0 dB</td>
+<td>2.09</td>
+<td>2.83</td>
+<td>5%</td>
+<td>5%</td>
+<td>23%</td>
+<td>8%</td>
+</tr>
+<tr>
+<td>DNN only (HQ deployed)</td>
+<td>5 dB</td>
+<td>2.37</td>
+<td>3.07</td>
+<td>3%</td>
+<td>2%</td>
+<td>32%</td>
+<td>15%</td>
+</tr>
+<tr>
+<td>DNN only (HQ deployed)</td>
+<td>10 dB</td>
+<td>2.87</td>
+<td>3.49</td>
+<td>12%</td>
+<td>8%</td>
+<td>75%</td>
+<td>52%</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (HQ deployed)</strong></td>
+<td>-5 dB</td>
+<td>1.93</td>
+<td>2.60</td>
+<td>0%</td>
+<td>0%</td>
+<td>10%</td>
+<td>2%</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (HQ deployed)</strong></td>
+<td>0 dB</td>
+<td>2.35</td>
+<td>3.03</td>
+<td>3%</td>
+<td>2%</td>
+<td>30%</td>
+<td>12%</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (HQ deployed)</strong></td>
+<td>5 dB</td>
+<td>2.63</td>
+<td>3.26</td>
+<td>7%</td>
+<td>2%</td>
+<td>45%</td>
+<td>28%</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (HQ deployed)</strong></td>
+<td>10 dB</td>
+<td>3.08</td>
+<td>3.60</td>
+<td>27%</td>
+<td>15%</td>
+<td>87%</td>
+<td>62%</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (LL deployed)</strong></td>
+<td>-5 dB</td>
+<td>1.77</td>
+<td>2.37</td>
+<td>0%</td>
+<td>0%</td>
+<td>2%</td>
+<td>0%</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (LL deployed)</strong></td>
+<td>0 dB</td>
+<td>2.23</td>
+<td>2.90</td>
+<td>2%</td>
+<td>0%</td>
+<td>22%</td>
+<td>8%</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (LL deployed)</strong></td>
+<td>5 dB</td>
+<td>2.52</td>
+<td>3.15</td>
+<td>3%</td>
+<td>2%</td>
+<td>40%</td>
+<td>20%</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (LL deployed)</strong></td>
+<td>10 dB</td>
+<td>2.98</td>
+<td>3.55</td>
+<td>22%</td>
+<td>10%</td>
+<td>88%</td>
+<td>57%</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v2 HQ fine-tuned</td>
+<td>-5 dB</td>
+<td>1.83</td>
+<td>2.48</td>
+<td>0%</td>
+<td>0%</td>
+<td>5%</td>
+<td>0%</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v2 HQ fine-tuned</td>
+<td>0 dB</td>
+<td>2.30</td>
+<td>2.97</td>
+<td>3%</td>
+<td>0%</td>
+<td>28%</td>
+<td>10%</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v2 HQ fine-tuned</td>
+<td>5 dB</td>
+<td>2.59</td>
+<td>3.20</td>
+<td>3%</td>
+<td>2%</td>
+<td>43%</td>
+<td>22%</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v2 HQ fine-tuned</td>
+<td>10 dB</td>
+<td>2.97</td>
+<td>3.55</td>
+<td>20%</td>
+<td>10%</td>
+<td>85%</td>
+<td>57%</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v3 HQ</td>
+<td>-5 dB</td>
+<td>1.90</td>
+<td>2.57</td>
+<td>0%</td>
+<td>0%</td>
+<td>7%</td>
+<td>2%</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v3 HQ</td>
+<td>0 dB</td>
+<td>2.33</td>
+<td>3.00</td>
+<td>5%</td>
+<td>0%</td>
+<td>28%</td>
+<td>10%</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v3 HQ</td>
+<td>5 dB</td>
+<td>2.61</td>
+<td>3.23</td>
+<td>8%</td>
+<td>2%</td>
+<td>43%</td>
+<td>25%</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v3 HQ</td>
+<td>10 dB</td>
+<td>3.04</td>
+<td>3.57</td>
+<td>27%</td>
+<td>13%</td>
+<td>85%</td>
+<td>55%</td>
+</tr>
+<tr>
+<td>Two-mic network v3 (40 ms)</td>
+<td>-5 dB</td>
+<td>1.82</td>
+<td>2.52</td>
+<td>0%</td>
+<td>0%</td>
+<td>8%</td>
+<td>5%</td>
+</tr>
+<tr>
+<td>Two-mic network v3 (40 ms)</td>
+<td>0 dB</td>
+<td>2.35</td>
+<td>3.08</td>
+<td>8%</td>
+<td>7%</td>
+<td>35%</td>
+<td>22%</td>
+</tr>
+<tr>
+<td>Two-mic network v3 (40 ms)</td>
+<td>5 dB</td>
+<td>2.68</td>
+<td>3.30</td>
+<td>10%</td>
+<td>3%</td>
+<td>47%</td>
+<td>30%</td>
+</tr>
+<tr>
+<td>Two-mic network v3 (40 ms)</td>
+<td>10 dB</td>
+<td>3.24</td>
+<td>3.75</td>
+<td>47%</td>
+<td>20%</td>
+<td>90%</td>
+<td>77%</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network (TWO_MIC deployed, 40 ms)</strong></td>
+<td>-5 dB</td>
+<td>1.90</td>
+<td>2.58</td>
+<td>0%</td>
+<td>0%</td>
+<td>8%</td>
+<td>5%</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network (TWO_MIC deployed, 40 ms)</strong></td>
+<td>0 dB</td>
+<td>2.48</td>
+<td>3.13</td>
+<td>7%</td>
+<td>5%</td>
+<td>42%</td>
+<td>20%</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network (TWO_MIC deployed, 40 ms)</strong></td>
+<td>5 dB</td>
+<td>2.79</td>
+<td>3.36</td>
+<td>13%</td>
+<td>5%</td>
+<td>60%</td>
+<td>37%</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network (TWO_MIC deployed, 40 ms)</strong></td>
+<td>10 dB</td>
+<td>3.29</td>
+<td>3.74</td>
+<td>52%</td>
+<td>33%</td>
+<td>92%</td>
+<td>73%</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="table-r12c-input-snr-needed-for-a-mean-pesq-of-325-35-defence_v1-single-mic-defence_highsnr_v1-20-25-db">Table R12c: input SNR needed for a mean PESQ of 3.25 / 3.5, defence_v1 (single mic) + defence_highsnr_v1 (20, 25 dB)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>PESQ-WB ≥ 3.25</th>
+<th>PESQ-WB ≥ 3.5</th>
+<th>PESQ-NB ≥ 3.25</th>
+<th>PESQ-NB ≥ 3.5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DeepFilterNet3 (public, 40 ms)</td>
+<td>&gt; 25 dB (not reached)</td>
+<td>&gt; 25 dB (not reached)</td>
+<td>12.3 dB</td>
+<td>17.0 dB</td>
+</tr>
+<tr>
+<td><strong>D-ANC HQ deployed (40 ms, v3 continued)</strong></td>
+<td>14.7 dB</td>
+<td>18.6 dB</td>
+<td>5.3 dB</td>
+<td>9.1 dB</td>
+</tr>
+<tr>
+<td><strong>D-ANC LL deployed (20 ms, v2)</strong></td>
+<td>17.3 dB</td>
+<td>21.6 dB</td>
+<td>8.0 dB</td>
+<td>12.1 dB</td>
+</tr>
+<tr>
+<td>D-ANC v2 HQ + fine-tune (40 ms)</td>
+<td>16.0 dB</td>
+<td>20.3 dB</td>
+<td>6.3 dB</td>
+<td>10.1 dB</td>
+</tr>
+<tr>
+<td>D-ANC v3 LL (20 ms)</td>
+<td>17.2 dB</td>
+<td>21.4 dB</td>
+<td>7.8 dB</td>
+<td>11.8 dB</td>
+</tr>
+<tr>
+<td>D-ANC v3 HQ (40 ms)</td>
+<td>15.1 dB</td>
+<td>19.0 dB</td>
+<td>5.7 dB</td>
+<td>9.5 dB</td>
+</tr>
+</tbody>
+</table></div>
+<p>Linear interpolation of the per-SNR means in Tables R12a/R12b; values are input SNRs at the primary microphone.</p>
+<h4 id="table-r12d-input-snr-needed-for-a-mean-pesq-of-325-35-dualmic_v1-primary-reference-mic">Table R12d: input SNR needed for a mean PESQ of 3.25 / 3.5, dualmic_v1 (primary + reference mic)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>PESQ-WB ≥ 3.25</th>
+<th>PESQ-WB ≥ 3.5</th>
+<th>PESQ-NB ≥ 3.25</th>
+<th>PESQ-NB ≥ 3.5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DNN only (HQ deployed)</td>
+<td>&gt; 10 dB (not reached)</td>
+<td>&gt; 10 dB (not reached)</td>
+<td>7.1 dB</td>
+<td>&gt; 10 dB (not reached)</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (HQ deployed)</strong></td>
+<td>&gt; 10 dB (not reached)</td>
+<td>&gt; 10 dB (not reached)</td>
+<td>4.8 dB</td>
+<td>8.6 dB</td>
+</tr>
+<tr>
+<td><strong>Hybrid NLMS+DNN (LL deployed)</strong></td>
+<td>&gt; 10 dB (not reached)</td>
+<td>&gt; 10 dB (not reached)</td>
+<td>6.3 dB</td>
+<td>9.4 dB</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v2 HQ fine-tuned</td>
+<td>&gt; 10 dB (not reached)</td>
+<td>&gt; 10 dB (not reached)</td>
+<td>5.7 dB</td>
+<td>9.3 dB</td>
+</tr>
+<tr>
+<td>Hybrid NLMS + v3 HQ</td>
+<td>&gt; 10 dB (not reached)</td>
+<td>&gt; 10 dB (not reached)</td>
+<td>5.3 dB</td>
+<td>9.0 dB</td>
+</tr>
+<tr>
+<td>Two-mic network v3 (40 ms)</td>
+<td>&gt; 10 dB (not reached)</td>
+<td>&gt; 10 dB (not reached)</td>
+<td>3.8 dB</td>
+<td>7.2 dB</td>
+</tr>
+<tr>
+<td><strong>Cascade NLMS → two-mic network (TWO_MIC deployed, 40 ms)</strong></td>
+<td>9.6 dB</td>
+<td>&gt; 10 dB (not reached)</td>
+<td>2.6 dB</td>
+<td>6.9 dB</td>
+</tr>
+</tbody>
+</table></div>
+<p>Linear interpolation of the per-SNR means in Tables R12a/R12b; values are input SNRs at the primary microphone.</p>
+<p><strong>What the measurements say about the request "PESQ-WB and PESQ-NB at least 3.25–3.5 in all cases."</strong> To locate the thresholds, the defence test set was extended to 20 and 25 dB input SNR with the same construction (<code>danc.data.build_highsnr</code> → <code>defence_highsnr_v1</code>, 160 files).
+- <strong>Where it is reached.</strong> It depends on how far the speech at the boom microphone is above the noise. For the deployed round-2 HQ model (Table R12c), the <em>mean</em> PESQ-NB reaches 3.25 from 5.3 dB input SNR and 3.5 from 9.1 dB. The mean PESQ-WB reaches 3.25 from 14.7 dB and 3.5 from 18.6 dB. At 20 dB input it averages PESQ-WB 3.59 and NB 3.99. At 25 dB it averages 3.72 and 4.08, so the round-1 request for "PESQ above 4" is met on the narrowband scale at 25 dB input. In those conditions the model barely changes the SNR (25 dB: 23.8 dB in, 24.4 dB out) but lifts PESQ-WB from 2.85 to 3.72. It removes the audible residual without distorting the speech; DeepFilterNet3 lowers the SNR there, to 19.7 dB.
+- <strong>Where it is not reached.</strong> At −10 to 5 dB input, the deployed HQ model averages PESQ-WB 1.53–2.52 and PESQ-NB 2.05–3.23. The low-SNR results cited in §1 are also well below 3.25: GCRN 2.65 at 0 dB and 2.13 at −5 dB; Xu et al. 2.60 at 5 dB (civilian noise, PESQ variant as published). The public DeepFilterNet3 does not reach a mean PESQ-WB of 3.25 even at 25 dB input, and it needs 12.3 dB input for NB 3.25.
+- <strong>Per file.</strong> At 15 dB input, 97.5 % of the deployed HQ model's files exceed PESQ-NB 3.25 and 51 % exceed PESQ-WB 3.25 (Table R12a).
+- <strong>With the reference microphone</strong> (Table R12d), the two-mic cascade reaches a mean PESQ-NB of 3.25 from 2.6 dB and PESQ-WB 3.25 from 9.6 dB input SNR. On the same dual-mic scenes the single-mic HQ network alone needs 7.1 dB for PESQ-NB 3.25 and never reaches PESQ-WB 3.25 up to 10 dB. The reference microphone is therefore worth about 4.5 dB of input SNR here.
+- <strong>What would meet the request in the field.</strong> Raising the SNR <em>at the microphone</em> is a matter of acoustic design, not of the algorithm:
+  - A noise-cancelling boom mic: MIL-STD-1472H requires ≥ 10 dBA noise reduction [V], which turns a −5 dB open-mic scene into about +5 dB.
+  - In-ear, throat or bone-conduction sensors: Vibravox measured 25.6 dB vs 0.1 dB SNR at 90 dB ambient [V].
+  - The reference microphone (§8.2, §8.10).</p>
+<p>On the algorithm side, round 2 moved the single-mic PESQ-WB 3.5 crossing from 20.3 dB (round-1 HQ) to 18.6 dB, using 1.8× the compute. This is incremental: algorithm changes alone will not close a 15–20 dB gap.
+- <strong>Caveat on the metric.</strong> PESQ is marked out of date by ITU-T in favour of P.863 (POLQA) [V], and was not designed for DNN processing artefacts. Acceptance should rest on MRT intelligibility tests through the radio chain (§7).</p>
+<h3 id="88-ablations-table-r13">8.8 Ablations (Table R13)</h3>
+<p><img alt="Ablations" loading="lazy" src="figures/round2_ablations.png" /></p>
+<h4 id="table-r13-ablations-v2-architecture-2-500-steps-each-same-data-order-defence_v1-515-db">Table R13: ablations (v2 architecture, 2 500 steps each, same data order; defence_v1 −5…15 dB)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Arm</th>
+<th>PESQ-WB</th>
+<th>PESQ-NB</th>
+<th>STOI</th>
+<th>output SNR</th>
+<th>SI-SDR</th>
+<th>Δ PESQ-WB vs ref</th>
+<th>Δ STOI vs ref</th>
+<th>impulsive STOI</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>reference arm (deep filter 5 taps, no look-ahead, median normaliser)</td>
+<td>2.035</td>
+<td>2.692</td>
+<td>0.881</td>
+<td>12.05</td>
+<td>11.75</td>
+<td>+0.000</td>
+<td>+0.0000</td>
+<td>0.924</td>
+</tr>
+<tr>
+<td>exponential-mean normaliser instead of median</td>
+<td>2.055</td>
+<td>2.714</td>
+<td>0.882</td>
+<td>12.25</td>
+<td>11.94</td>
+<td>+0.020</td>
+<td>+0.0010</td>
+<td>0.925</td>
+</tr>
+<tr>
+<td>plain complex mask (1 tap) instead of deep filter</td>
+<td>2.060</td>
+<td>2.720</td>
+<td>0.883</td>
+<td>11.96</td>
+<td>11.89</td>
+<td>+0.025</td>
+<td>+0.0014</td>
+<td>0.925</td>
+</tr>
+<tr>
+<td>look-ahead 2 frames (40 ms)</td>
+<td>2.122</td>
+<td>2.786</td>
+<td>0.888</td>
+<td>12.26</td>
+<td>12.18</td>
+<td>+0.087</td>
+<td>+0.0068</td>
+<td>0.928</td>
+</tr>
+<tr>
+<td>look-ahead 4 frames (60 ms)</td>
+<td>2.087</td>
+<td>2.761</td>
+<td>0.886</td>
+<td>12.31</td>
+<td>12.05</td>
+<td>+0.052</td>
+<td>+0.0050</td>
+<td>0.927</td>
+</tr>
+<tr>
+<td>no PMSQE perceptual loss</td>
+<td>1.973</td>
+<td>2.624</td>
+<td>0.880</td>
+<td>12.19</td>
+<td>11.71</td>
+<td>-0.062</td>
+<td>-0.0014</td>
+<td>0.924</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Protocol.</strong> Six arms of the v2 architecture, each trained from scratch for 2 500 steps (batch 16 × 3 s, about one seventh of a full run) with the <strong>same seed and data order</strong>. Each arm changes exactly one thing against the reference arm (<code>configs/ablations/</code>). They are evaluated on the full defence test set (800 files, −5…15 dB). Paired 95 % confidence intervals come from a bootstrap over files (<code>scripts/paired_stats.py</code>). The normaliser and the output arms were also run on the edge-case set (<code>logs/eval_edge_ablations.out</code>).</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Change against the reference arm</th>
+<th>Δ PESQ-WB [95 % CI]</th>
+<th>Δ STOI [95 % CI]</th>
+<th>Δ SI-SDR [95 % CI]</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Look-ahead 2 frames (40 ms)</td>
+<td><strong>+0.087</strong> [+0.078, +0.096]</td>
+<td><strong>+0.0068</strong> [+0.0061, +0.0075]</td>
+<td>+0.43 dB [+0.38, +0.48]</td>
+<td>Confirms the 40 ms HQ design: the largest single effect (better on 80 % of files)</td>
+</tr>
+<tr>
+<td>Look-ahead 4 frames (60 ms)</td>
+<td>+0.052 [+0.042, +0.062]</td>
+<td>+0.0050 [+0.0043, +0.0057]</td>
+<td>+0.30 dB [+0.25, +0.35]</td>
+<td>Worse than 2 frames at this budget, and over the 40 ms DNS real-time limit: <strong>L = 2 kept</strong></td>
+</tr>
+<tr>
+<td>No PMSQE perceptual loss</td>
+<td><strong>−0.062</strong> [−0.071, −0.053]</td>
+<td>−0.0014 [−0.0019, −0.0010]</td>
+<td>−0.04 dB [−0.08, +0.01]</td>
+<td>Confirms the perceptual loss: it buys PESQ without costing SI-SDR</td>
+</tr>
+<tr>
+<td>Exponential-mean normaliser instead of the running median</td>
+<td>+0.020 [+0.013, +0.027]</td>
+<td>+0.0010 [+0.0005, +0.0014]</td>
+<td>+0.19 dB [+0.14, +0.24]</td>
+<td><strong>Negative result for the median normaliser</strong> (see below)</td>
+</tr>
+<tr>
+<td>Plain complex mask (1 tap) instead of the 5-tap deep filter</td>
+<td>+0.025 [+0.019, +0.032]</td>
+<td>+0.0014 [+0.0010, +0.0019]</td>
+<td>+0.14 dB [+0.11, +0.18]</td>
+<td><strong>Deep filter's benefit not demonstrated</strong> without look-ahead</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>Median normaliser.</strong> It was introduced so that a gunshot or blast cannot pull the input normalisation down for the speech that follows (§4). The ablation does not support that rationale. The exponential-mean variant is slightly <em>better</em> overall, and on the case the median was designed for (<code>post_blast</code>, an explosion 25–35 dB above the talker) the two are equal in the 2 s after the blast (recovery STOI 0.796 vs 0.796). There, the median arm even has lower PESQ-WB (1.74 vs 1.80). Most plausibly, the compressed input features and the recurrent network already absorb the level jump. The deployed models keep the median normaliser, because retraining every model was outside the round-2 budget and the difference is small (0.02 PESQ). A future retraining should use the simpler exponential mean.</li>
+<li><strong>Deep filter.</strong> At zero look-ahead and this budget, the single-tap complex mask is slightly better. DeepFilterNet uses its deep filter together with look-ahead, so the combination that matters (deep filter with L = 2) was not isolated here. The deep filter costs 0.001 MMAC per frame and was kept, but its added value is <strong>not</strong> demonstrated by this study.</li>
+<li><strong>Caveats.</strong> These are single-seed runs at one seventh of the full budget. Differences of about 0.02 PESQ may change with full training and other seeds. The look-ahead and PMSQE effects are three to four times larger and consistent across validation and test.</li>
+</ul>
+<h3 id="89-negative-results-kept-on-record">8.9 Negative results, kept on record</h3>
+<ul>
+<li><strong>Speech-presence post-filter</strong> (<code>danc.inference.postfilter</code>). The post-filter is y = Y·(β + (1−β)·s^γ), with s the network's own speech-presence probability, optionally smoothed. It was tuned on the validation set only (<code>scripts/tune_postfilter.py</code> → <code>reports/results/postfilter_tuning/val_hq_metric.json</code>, 17 settings). The best setting (β 0.5, γ 0.5, smoothing 0.6) gave PESQ-WB +0.004 (2.474 → 2.478), STOI −0.0014 and SI-SDR −0.03 dB against no post-filter. That is within noise and costs intelligibility, so it was <strong>not adopted</strong>. The module stays available and off by default.</li>
+<li><strong>More than 2 frames of look-ahead</strong> (Table R13): at the same training budget, look-ahead 4 (60 ms) was worse than look-ahead 2. See §8.8.</li>
+<li><strong>v3-LL</strong> was better on every metric of the defence test set and VoiceBank+DEMAND, and on clean transparency but missed the pre-registered adoption bar (<code>reports/results/v3_decision_ll.md</code>); see §8.10.</li>
+<li><strong>Larger batches on the M4 GPU</strong> gave too little extra throughput (+9 % / +14 % for v2, none for v3; the bar was +25 %) (§5.1).</li>
+</ul>
+<h3 id="810-round-2-model-decisions-two-microphone-network-and-statistics">8.10 Round-2 model decisions, two-microphone network and statistics</h3>
+<p>Every round-2 candidate was judged against an adoption rule written <strong>before</strong> its test result existed (<code>reports/results/*_decision_rule.md</code>, with time stamps). The decision records are next to the rules.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Candidate</th>
+<th>Rule</th>
+<th>Outcome</th>
+<th>Record</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>v3 HQ</strong> (40 ms, 609 K) vs round-1 HQ</td>
+<td><code>v3_decision_rule.md</code></td>
+<td><strong>Adopted.</strong> Defence +0.043 PESQ-WB [+0.034, +0.051], STOI +0.002, SI-SDR +0.18 dB; VoiceBank +0.047; clean transparency 3.57 / 4.51; engine p99.9 0.75 ms</td>
+<td><code>v3_decision_hq.md</code></td>
+</tr>
+<tr>
+<td><strong>v3 LL</strong> (20 ms) vs round-1 LL</td>
+<td>same</td>
+<td><strong>Not adopted.</strong> Defence +0.018 PESQ-WB [+0.009, +0.027] misses the +0.03 bar, although it is better on every metric of the defence test set and VoiceBank+DEMAND, and on clean transparency (VoiceBank +0.19, transparency 3.32 vs 2.66). <strong>Left as an owner decision</strong></td>
+<td><code>v3_decision_ll.md</code></td>
+</tr>
+<tr>
+<td><strong>v3 HQ continued</strong> (warm restart, 10 k steps) vs v3 HQ</td>
+<td><code>v3hq_cont_decision_rule.md</code></td>
+<td><strong>Adopted; this is the deployed HQ model.</strong> Defence +0.028 PESQ-WB [+0.024, +0.032], STOI +0.002, SI-SDR +0.15 dB; VoiceBank +0.012; clean transparency 3.61 / 4.52; identical architecture, measured p99.9 0.75 ms. Its defence average of <strong>PESQ-WB 2.511</strong> over −5…15 dB is the first above the brief's 2.5</td>
+<td><code>v3hq_cont_decision.md</code></td>
+</tr>
+<tr>
+<td><strong>Two-mic network alone</strong> vs hybrid v3 HQ</td>
+<td><code>two_mic_decision_rule.md</code></td>
+<td><strong>Not adopted.</strong> +0.051 PESQ-WB and +0.44 dB SI-SDR, but STOI −0.007 overall and −0.10 PESQ / −0.014 STOI in stationary noise</td>
+<td><code>two_mic_decision.md</code></td>
+</tr>
+<tr>
+<td><strong>Cascade: NLMS → two-mic network</strong> vs hybrid v3 HQ</td>
+<td><code>cascade_decision_rule.md</code></td>
+<td><strong>Adopted, with the reference-health fallback; this is the deployed two-mic configuration.</strong> +0.145 PESQ-WB, STOI +0.0005, SI-SDR +0.21 dB; every category within the guards; a dead reference stays at or above unprocessed (narrowly, hence the fallback); shipped configuration p99.9 1.41 ms</td>
+<td><code>cascade_decision.md</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Two microphones.</strong> Round 1 used the reference microphone only through a linear canceller. Round 2 gave a network both microphones.
+- <strong>Alone, the two-mic network has a different strength profile from the NLMS hybrid.</strong> It is much better on impulsive noise (+0.22 PESQ-WB) and at 10 dB input (+0.20). It is worse on stationary, coherent noise, where a continuously adapting linear canceller is hard to beat (§8.2).
+- <strong>Running the same network behind the gated NLMS keeps most of both strengths, with no retraining.</strong> On <code>dualmic_v1</code> this cascade gives PESQ-WB 2.616 against 2.472 for the v3 hybrid and 2.425 for the round-1 deployed hybrid, with STOI unchanged (0.931). Against the hybrid with the final round-2 HQ model there is a small trade-off. It is better overall (+0.117 PESQ-WB) and in impulsive and mixed noise. It is slightly worse in stationary noise (PESQ-WB −0.013, STOI −0.0075, SI-SDR −0.30 dB) and at −5 dB input (PESQ-WB −0.026, STOI −0.006). Overall STOI is −0.0009 [95 % CI −0.0023, +0.0005].
+- <strong>On crew babble</strong> (<code>dualmic_babble_v1</code>), the case where a single microphone barely helps, the cascade reaches STOI <strong>0.904</strong> and PESQ-WB 2.06. The unprocessed primary gives 0.740 / 1.12, and the v3 hybrid 0.823 / 1.37.
+- <strong>Why it works on babble.</strong> The network has learned the cue a single microphone lacks. The wearer is close to the boom mic and weak at the reference; other crew members reach both microphones at similar levels.
+- <strong>Caveat.</strong> These are simulated headset scenes. The level and leakage relations must be confirmed with the real headset (risk R1).
+- <strong>Dead reference.</strong> With a dead reference the two-mic network is barely better than doing nothing (STOI 0.812 vs 0.798 unprocessed), so it ships only with the reference-health fallback (§4).</p>
+<h4 id="table-r15-paired-differences-with-95-bootstrap-confidence-intervals-scriptspaired_statspy-reportsresultspaired_statsjson">Table R15: paired differences with 95 % bootstrap confidence intervals (<code>scripts/paired_stats.py</code> → <code>reports/results/paired_stats.json</code>)</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Comparison (B vs A)</th>
+<th>set</th>
+<th>n</th>
+<th>Δ PESQ-WB [95 % CI]</th>
+<th>Δ PESQ-NB [95 % CI]</th>
+<th>Δ STOI [95 % CI]</th>
+<th>Δ SI-SDR dB [95 % CI]</th>
+<th>B better (PESQ-WB)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v3 HQ vs v2 HQ (round-1 deployed)</td>
+<td>defence_v1</td>
+<td>800</td>
+<td>+0.043 [+0.034, +0.051]</td>
+<td>+0.044 [+0.038, +0.050]</td>
+<td>+0.0023 [+0.0019, +0.0028]</td>
+<td>+0.18 [+0.11, +0.24]</td>
+<td>68%</td>
+</tr>
+<tr>
+<td>v3 LL vs v2 LL (round-1 deployed)</td>
+<td>defence_v1</td>
+<td>800</td>
+<td>+0.018 [+0.009, +0.027]</td>
+<td>+0.017 [+0.009, +0.024]</td>
+<td>+0.0019 [+0.0014, +0.0023]</td>
+<td>+0.12 [+0.07, +0.17]</td>
+<td>57%</td>
+</tr>
+<tr>
+<td>v3 HQ continued vs v3 HQ</td>
+<td>defence_v1</td>
+<td>800</td>
+<td>+0.028 [+0.024, +0.032]</td>
+<td>+0.026 [+0.023, +0.029]</td>
+<td>+0.0019 [+0.0017, +0.0021]</td>
+<td>+0.15 [+0.13, +0.18]</td>
+<td>75%</td>
+</tr>
+<tr>
+<td>round-2 HQ (deployed) vs round-1 HQ</td>
+<td>defence_v1</td>
+<td>800</td>
+<td>+0.070 [+0.061, +0.079]</td>
+<td>+0.070 [+0.063, +0.076]</td>
+<td>+0.0042 [+0.0037, +0.0047]</td>
+<td>+0.33 [+0.28, +0.38]</td>
+<td>78%</td>
+</tr>
+<tr>
+<td>round-2 HQ (deployed) vs round-1 HQ (VoiceBank+DEMAND)</td>
+<td>vbdemand</td>
+<td>824</td>
+<td>+0.060 [+0.046, +0.073]</td>
+<td>+0.066 [+0.056, +0.076]</td>
+<td>+0.0006 [-0.0003, +0.0015]</td>
+<td>+0.27 [+0.23, +0.31]</td>
+<td>67%</td>
+</tr>
+<tr>
+<td>hybrid with round-2 HQ vs hybrid with round-1 HQ</td>
+<td>dualmic_v1</td>
+<td>240</td>
+<td>+0.074 [+0.058, +0.090]</td>
+<td>+0.070 [+0.057, +0.084]</td>
+<td>+0.0038 [+0.0030, +0.0047]</td>
+<td>+0.24 [+0.14, +0.35]</td>
+<td>77%</td>
+</tr>
+<tr>
+<td>cascade vs hybrid with round-2 HQ (information)</td>
+<td>dualmic_v1</td>
+<td>240</td>
+<td>+0.117 [+0.086, +0.150]</td>
+<td>+0.081 [+0.058, +0.105]</td>
+<td>-0.0009 [-0.0023, +0.0005]</td>
+<td>+0.12 [-0.05, +0.28]</td>
+<td>65%</td>
+</tr>
+<tr>
+<td>v3 HQ vs DeepFilterNet3</td>
+<td>defence_v1</td>
+<td>800</td>
+<td>+0.440 [+0.414, +0.466]</td>
+<td>+0.387 [+0.365, +0.408]</td>
+<td>+0.0306 [+0.0283, +0.0330]</td>
+<td>+2.50 [+2.30, +2.70]</td>
+<td>93%</td>
+</tr>
+<tr>
+<td>v3 HQ vs v2 HQ (round-1 deployed; VoiceBank+DEMAND)</td>
+<td>vbdemand</td>
+<td>824</td>
+<td>+0.047 [+0.034, +0.060]</td>
+<td>+0.042 [+0.032, +0.052]</td>
+<td>-0.0002 [-0.0012, +0.0007]</td>
+<td>+0.13 [+0.09, +0.17]</td>
+<td>64%</td>
+</tr>
+<tr>
+<td>v3 HQ continued vs v3 HQ (VoiceBank+DEMAND)</td>
+<td>vbdemand</td>
+<td>824</td>
+<td>+0.012 [+0.004, +0.020]</td>
+<td>+0.024 [+0.019, +0.029]</td>
+<td>+0.0008 [+0.0004, +0.0013]</td>
+<td>+0.14 [+0.12, +0.16]</td>
+<td>56%</td>
+</tr>
+<tr>
+<td>hybrid v3 HQ vs hybrid v2 HQ</td>
+<td>dualmic_v1</td>
+<td>240</td>
+<td>+0.046 [+0.031, +0.062]</td>
+<td>+0.041 [+0.028, +0.053]</td>
+<td>+0.0024 [+0.0017, +0.0032]</td>
+<td>+0.14 [+0.04, +0.25]</td>
+<td>69%</td>
+</tr>
+<tr>
+<td>two-mic network vs hybrid v3 HQ</td>
+<td>dualmic_v1</td>
+<td>240</td>
+<td>+0.051 [+0.013, +0.088]</td>
+<td>+0.072 [+0.044, +0.101]</td>
+<td>-0.0073 [-0.0091, -0.0054]</td>
+<td>+0.44 [+0.13, +0.75]</td>
+<td>55%</td>
+</tr>
+<tr>
+<td>hybrid v3 HQ continued vs hybrid v3 HQ</td>
+<td>dualmic_v1</td>
+<td>240</td>
+<td>+0.027 [+0.019, +0.036]</td>
+<td>+0.030 [+0.023, +0.036]</td>
+<td>+0.0014 [+0.0011, +0.0017]</td>
+<td>+0.09 [+0.05, +0.14]</td>
+<td>73%</td>
+</tr>
+<tr>
+<td>two-mic network with DEAD reference vs single-mic v3 HQ</td>
+<td>dualmic_v1</td>
+<td>240</td>
+<td>-0.891 [-0.942, -0.840]</td>
+<td>-1.013 [-1.055, -0.969]</td>
+<td>-0.0929 [-0.1005, -0.0855]</td>
+<td>-8.99 [-9.43, -8.57]</td>
+<td>0%</td>
+</tr>
+<tr>
+<td>two-mic network with DEAD reference vs unprocessed</td>
+<td>dualmic_v1</td>
+<td>240</td>
+<td>+0.085 [+0.059, +0.114]</td>
+<td>+0.101 [+0.076, +0.131]</td>
+<td>+0.0138 [+0.0108, +0.0173]</td>
+<td>+0.90 [+0.70, +1.13]</td>
+<td>98%</td>
+</tr>
+<tr>
+<td>cascade NLMS -&gt; two-mic network vs hybrid v3 HQ</td>
+<td>dualmic_v1</td>
+<td>240</td>
+<td>+0.145 [+0.114, +0.178]</td>
+<td>+0.111 [+0.087, +0.135]</td>
+<td>+0.0005 [-0.0008, +0.0019]</td>
+<td>+0.21 [+0.04, +0.37]</td>
+<td>70%</td>
+</tr>
+<tr>
+<td>cascade vs round-1 deployed hybrid HQ</td>
+<td>dualmic_v1</td>
+<td>240</td>
+<td>+0.191 [+0.158, +0.226]</td>
+<td>+0.152 [+0.127, +0.178]</td>
+<td>+0.0029 [+0.0015, +0.0045]</td>
+<td>+0.35 [+0.15, +0.55]</td>
+<td>77%</td>
+</tr>
+<tr>
+<td>cascade with DEAD reference vs unprocessed</td>
+<td>dualmic_v1</td>
+<td>240</td>
+<td>+0.079 [+0.054, +0.108]</td>
+<td>+0.096 [+0.071, +0.125]</td>
+<td>+0.0132 [+0.0102, +0.0167]</td>
+<td>+0.89 [+0.69, +1.11]</td>
+<td>94%</td>
+</tr>
+<tr>
+<td>crew babble: cascade vs hybrid v3 HQ</td>
+<td>dualmic_babble_v1</td>
+<td>60</td>
+<td>+0.693 [+0.618, +0.768]</td>
+<td>+0.801 [+0.725, +0.877]</td>
+<td>+0.0811 [+0.0673, +0.0955]</td>
+<td>+4.79 [+4.12, +5.47]</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>crew babble: two-mic network vs hybrid v3 HQ</td>
+<td>dualmic_babble_v1</td>
+<td>60</td>
+<td>+0.491 [+0.434, +0.551]</td>
+<td>+0.626 [+0.566, +0.685]</td>
+<td>+0.0664 [+0.0546, +0.0784]</td>
+<td>+4.11 [+3.59, +4.64]</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>crew babble: two-mic network vs unprocessed</td>
+<td>dualmic_babble_v1</td>
+<td>60</td>
+<td>+0.737 [+0.653, +0.824]</td>
+<td>+1.021 [+0.943, +1.098]</td>
+<td>+0.1493 [+0.1363, +0.1624]</td>
+<td>+8.36 [+7.98, +8.74]</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>crew babble: hybrid v3 HQ vs unprocessed</td>
+<td>dualmic_babble_v1</td>
+<td>60</td>
+<td>+0.246 [+0.201, +0.294]</td>
+<td>+0.395 [+0.330, +0.463]</td>
+<td>+0.0830 [+0.0748, +0.0919]</td>
+<td>+4.25 [+3.82, +4.70]</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>ablation: EMA normaliser vs reference arm</td>
+<td>defence_v1</td>
+<td>800</td>
+<td>+0.020 [+0.013, +0.027]</td>
+<td>+0.022 [+0.016, +0.028]</td>
+<td>+0.0010 [+0.0005, +0.0014]</td>
+<td>+0.19 [+0.14, +0.24]</td>
+<td>62%</td>
+</tr>
+<tr>
+<td>ablation: complex mask vs reference arm</td>
+<td>defence_v1</td>
+<td>800</td>
+<td>+0.025 [+0.019, +0.032]</td>
+<td>+0.028 [+0.022, +0.034]</td>
+<td>+0.0014 [+0.0010, +0.0019]</td>
+<td>+0.14 [+0.11, +0.18]</td>
+<td>66%</td>
+</tr>
+<tr>
+<td>ablation: look-ahead 2 vs reference arm</td>
+<td>defence_v1</td>
+<td>800</td>
+<td>+0.087 [+0.078, +0.096]</td>
+<td>+0.094 [+0.086, +0.103]</td>
+<td>+0.0068 [+0.0061, +0.0075]</td>
+<td>+0.43 [+0.38, +0.48]</td>
+<td>80%</td>
+</tr>
+<tr>
+<td>ablation: look-ahead 4 vs reference arm</td>
+<td>defence_v1</td>
+<td>800</td>
+<td>+0.052 [+0.042, +0.062]</td>
+<td>+0.068 [+0.059, +0.077]</td>
+<td>+0.0050 [+0.0043, +0.0057]</td>
+<td>+0.30 [+0.25, +0.35]</td>
+<td>73%</td>
+</tr>
+<tr>
+<td>ablation: no PMSQE vs reference arm</td>
+<td>defence_v1</td>
+<td>800</td>
+<td>-0.062 [-0.071, -0.053]</td>
+<td>-0.069 [-0.075, -0.062]</td>
+<td>-0.0014 [-0.0019, -0.0010]</td>
+<td>-0.04 [-0.08, +0.01]</td>
+<td>24%</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="9-risks-and-mitigations">9. Risks and mitigations</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Risk to the targets or latency budget</th>
+<th>Likelihood / impact</th>
+<th>Mitigation (status)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td><strong>Domain gap.</strong> Synthetic gunfire, artillery and rotor noise and 1990-era NOISEX recordings may not match real fielded noise, so metrics may drop on real recordings.</td>
+<td>High / high</td>
+<td>Collect a range-and-vehicle noise corpus with the target headset (dual-mic, calibrated SPL), fine-tune on it, and re-validate. Licensed open corpora exist: Kabealo &amp; Wyatt edge gunshot recordings (CC BY 4.0) and DroneAudioSet (MIT) [N]. <em>Open.</em></td>
+</tr>
+<tr>
+<td>R2</td>
+<td><strong>Very low SNR (≤ −5 dB)</strong>: targets not met (§8.1); the literature shows the same limit [V].</td>
+<td>Certain / high</td>
+<td>Use hardware SNR gain first: a noise-cancelling boom mic (MIL-STD-1472H requires ≥ 10 dBA improvement [V]), a throat or in-ear sensor (Vibravox: 25.6 dB vs 0.1 dB SNR at 90 dB ambient [V]), and the reference-mic NLMS. Specify the targets per input-SNR band. <em>Partly addressed: hybrid NLMS + DNN implemented.</em></td>
+</tr>
+<tr>
+<td>R3</td>
+<td><strong>Microphone or ADC clipping on nearby gunfire.</strong> Information is destroyed, not merely masked.</td>
+<td>High / medium</td>
+<td>High-AOP microphones, analog limiting before the ADC, clipping augmentation in training (implemented); the output limiter protects the listener (implemented).</td>
+</tr>
+<tr>
+<td>R4</td>
+<td><strong>Speech distortion and over-suppression.</strong> The STOI or SI-SDR penalty is larger than any PESQ gain.</td>
+<td>Medium / high</td>
+<td>Asymmetric over-suppression loss, a STOI-weighted model-selection score, and an optional comfort floor <code>--gain-floor-db</code> (implemented). Fine-tunes are adopted only under the pre-registered non-inferiority rule (SI-SDR may drop by at most 0.2 dB; §5, §8.3).</td>
+</tr>
+<tr>
+<td>R5</td>
+<td><strong>Metric gaming.</strong> PESQ-guided training raises PESQ but not real intelligibility. PESQ is withdrawn by ITU-T [V] and was not designed for DNN artefacts.</td>
+<td>Medium / medium</td>
+<td>Fine-tuning stays anchored by the full loss; STOI, ESTOI, SI-SDR and SNR are all reported; MRT listening tests are required for acceptance.</td>
+</tr>
+<tr>
+<td>R6</td>
+<td><strong>Jetson latency or jitter</strong>: GPU launch stalls, desktop interference, thermal throttling. The round-2 two-mic configuration runs two networks per hop and had 2 late blocks in 11 800 paced blocks on the Mac desktop (§8.5).</td>
+<td>Medium / high</td>
+<td>CPU path by default; SCHED_FIFO with isolated cores; desktop disabled; CUDA Graphs on the GPU path; p99.9 acceptance criterion. <em>Must be measured: no published Orin SE latency was found.</em></td>
+</tr>
+<tr>
+<td>R7</td>
+<td><strong>Reference-mic leakage or failure.</strong> LMS cancels speech, or the reference is lost. With the two-mic network, a dead reference leaves it barely better than unprocessed (STOI 0.812 vs 0.798).</td>
+<td>Medium / high for the two-mic configuration</td>
+<td>SPP-gated adaptation, divergence reset and output limiting (implemented); DNN-only fallback for the hybrid (implemented). For the two-mic configuration (round 2): a reference-health monitor that switches to a hot-standby single-mic network in under 1 s, checked by <code>verify_install.py</code> <em>(implemented)</em>. Real headset faults (intermittent connector, moisture) still need field testing.</td>
+</tr>
+<tr>
+<td>R8</td>
+<td><strong>Look-ahead latency.</strong> HQ mode adds 20 ms.</td>
+<td>Low / medium</td>
+<td>LL mode (20 ms) is kept as the latency-critical alternative; total budget analysis in §6.</td>
+</tr>
+<tr>
+<td>R9</td>
+<td><strong>Licences.</strong> ESC-50 is non-commercial, NOISEX-92 terms are unclear, the drone set is unlicensed.</td>
+<td>Certain / medium for deployment</td>
+<td>Legal review before shipping models trained on these data; retrain on cleared data (R1). The code is the project's own, except the PMSQE (MIT) and DFN3 reference (MIT/Apache-2.0) components. The DFN3 runtime packages in <code>third_party/dfn_pkgs/</code> are permissive (MIT, Apache-2.0, BSD); numpy's bundled GCC runtime libraries are GPL-3.0 with the GCC runtime exception or LGPL (<code>numpy-1.26.4.dist-info/LICENSE.txt</code>). Data attribution: <code>data/ATTRIBUTION.md</code>.</td>
+</tr>
+<tr>
+<td>R10</td>
+<td><strong>Vocoder interaction.</strong> MELPe or CVSD noise pre-processors downstream may double-suppress or create artefacts.</td>
+<td>Medium / medium</td>
+<td>Evaluate through the actual vocoder chain (narrowband PESQ-NB and STOI after the codec, and MRT). <em>Open.</em></td>
+</tr>
+<tr>
+<td>R11</td>
+<td><strong>Development-machine limits.</strong> Training on a fanless 16 GB laptop: limited steps, data and model size.</td>
+<td>Certain / medium</td>
+<td>A GPU-server run on LibriSpeech-960 + DNS noise + defence recordings is expected to add quality <strong>[E]</strong>. The training code is device-agnostic (set <code>device: cuda</code>), but download support and configs for those corpora still have to be written. Round 2 used the M4 GPU for 10 training runs (11 invocations; the two-mic run was resumed), 21.8 h of GPU time in total. The batch-size benchmark showed the GPU saturated at batch 16. The warm-restart continuation still gained +0.028 PESQ-WB, so the models are not yet at their data or capacity limit.</td>
+</tr>
+<tr>
+<td>R12</td>
+<td><strong>Competing talkers (crew babble).</strong> One microphone cannot tell the wearer from a nearby crew member. Measured single-mic with the deployed HQ model: STOI 0.725 → 0.753, PESQ-WB 1.10 → 1.25 (§8.6).</td>
+<td>High in vehicles and shelters / high</td>
+<td>Use the reference microphone: on <code>dualmic_babble_v1</code> the NLMS hybrid with the deployed HQ model raises STOI from 0.740 to 0.825, and the two-mic cascade to <strong>0.904</strong> (§8.10). Next step: target-speaker conditioning on a few seconds of the wearer's enrolment speech. <em>Addressed for two-mic headsets; open for single-mic.</em></td>
+</tr>
+<tr>
+<td>R13</td>
+<td><strong>Software faults that only appear in long runs.</strong> Example found in round 2: a 30-s crash in the Jetson live wrapper (§6.3).</td>
+<td>Medium / high</td>
+<td>Fixed. Unit test and <code>verify_install.py</code> check past the trim point. The 10-minute real-time acceptance run (QUICKSTART step 11) is mandatory before fielding.</td>
+</tr>
+<tr>
+<td>R14</td>
+<td><strong>PESQ 3.25–3.5 required "in all cases".</strong> The mean reaches it only from 5.3 / 9.1 dB (NB) and 14.7 / 18.6 dB (WB) input SNR at the boom mic (deployed HQ, §8.7); with the two-mic cascade, on the dual-mic scenes, from 2.6 dB (NB 3.25) and 9.6 dB (WB 3.25), against 7.1 dB (NB 3.25) for the single-mic network on the same scenes.</td>
+<td>Certain at ≤ 5 dB / high</td>
+<td>Specify the targets per input-SNR band. Raise the SNR at the microphone acoustically (R2). Base acceptance on MRT (R5).</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="10-reproducibility">10. Reproducibility</h2>
+<ul>
+<li><strong>Environment.</strong> Python 3.11.15 venv (<code>.venv</code>, created with <code>uv</code>). Versions are pinned in <code>requirements.txt</code>: torch 2.14.1, onnxruntime 1.30.0, numpy 2.4.6, pesq 0.0.4, pystoi 0.4.1. The DeepFilterNet3 reference uses an isolated package directory (<code>third_party/dfn_pkgs</code>, numpy 1.26), so the main venv was not modified.</li>
+<li><strong>Data provenance.</strong> <code>data/manifests/provenance.json</code> records URLs, licences, SHA-256 hashes and the partial-download note. The speech manifests are <code>data/manifests/speech_*.json</code>. The test sets are rebuildable from fixed seeds (<code>danc.data.build_testset</code>).</li>
+<li><strong>Exact sequence used in this project:</strong></li>
+</ul>
+<pre><code class="language-bash">python -m danc.data.download --root data/raw
+python -m danc.data.download --root data/raw --only librispeech_partial
+python -m danc.data.build_testset                                   # defence_v1, dualmic_v1, dualmic_val
+python -m danc.train.train --config configs/train_hq.yaml           # 5.7 h on M4
+python -m danc.train.train --config configs/train_v2_ll.yaml        # 1.8 h, warm start from hq
+python -m danc.train.finetune_metric --config configs/finetune_hq_metric.yaml   # adopted
+python -m danc.train.finetune_metric --config configs/finetune_ll_metric.yaml   # not adopted
+python -m danc.inference.export_onnx --ckpt checkpoints/hq/best.pt --out exports/dancnet_hq.onnx
+python -m danc.inference.export_onnx --ckpt checkpoints/hq_metric/last.pt --out exports/dancnet_hqft.onnx
+python -m danc.inference.export_onnx --ckpt checkpoints/ll/best.pt --out exports/dancnet_ll.onnx
+python scripts/tune_hybrid.py dualmic_val &amp;&amp; python scripts/tune_hybrid.py dualmic_val --with-gate-power
+PYTHONPATH=third_party/dfn_pkgs python scripts/run_deepfilternet3.py --set defence_v1   # and --set vbdemand
+python -m danc.eval.evaluate --set defence_v1 --systems noisy,specsub,wiener,logmmse,file:dfn3,dancnet:hq,dancnet:hq_metric,dancnet:ll,dancnet:ll_metric
+python -m danc.eval.evaluate --set dualmic_v1 --systems primary,logmmse,nlms,dnn:hq,hybrid:hq,hybrid_nogate:hq,dnn:hqft,hybrid:hqft,dnn:ll,hybrid:ll
+python -m danc.eval.evaluate --set vbdemand --systems noisy,logmmse,file:dfn3,dancnet:hq,dancnet:hq_metric,dancnet:ll,dancnet:ll_metric
+python scripts/transparency_test.py --runs hq,hq_metric,ll,ll_metric
+python scripts/benchmark_latency.py --frames 6000 --models hq,hqft,ll,pilot
+python scripts/rir_stats.py
+python scripts/make_tables.py &gt; reports/results/tables.md
+python scripts/make_figures.py --set defence_v1 --systems noisy,logmmse,file:dfn3,dancnet:ll,dancnet:hq_metric --runs hq,ll
+python scripts/make_manifest.py                                     # DEPLOYMENT.json + MANIFEST.sha256
+python -m pytest -q                                                 # 68 tests
+</code></pre>
+<ul>
+<li>The rows labelled "untuned" (μ = 0.3, 4 taps, gate exponent 2) in Table R6 were produced with the engine's earlier defaults, before the validation-tuned defaults were set. Reproduce them with <code>EngineConfig(lms_mu=0.3, lms_taps=4, gate_power=2.0)</code>.</li>
+<li>
+<p>The ad-hoc commands that computed the transparency figures were folded into <code>scripts/transparency_test.py</code> afterwards; it reproduces the same procedure.</p>
+</li>
+<li>
+<p><strong>Round 2 commands, grouped by purpose, not strictly chronological</strong> (the queue scripts <code>scripts/run_round2*_chain.sh</code>, <code>scripts/eval_v3ll_when_ready.sh</code> and <code>scripts/eval_babble_when_ready.sh</code> ran these unattended; their logs are <code>logs/chain2*.out</code>):</p>
+</li>
+</ul>
+<pre><code class="language-bash">python -m danc.data.build_edgeset                                   # defence_edge_v1 (11 edge cases)
+python -m danc.data.build_dual_babble                               # dualmic_babble_v1 (crew babble, 2 mics)
+python -m danc.data.build_highsnr                                   # defence_highsnr_v1 (20 / 25 dB)
+python scripts/tune_postfilter.py                                   # post-filter on validation (not adopted)
+python -m danc.train.train --config configs/train_v3_hq.yaml        # v3 HQ, 6.9 h on the M4 GPU
+python -m danc.train.train_dual --config configs/train_v3_2mic.yaml # two-mic network (stopped at step ~2 500, see incidents)
+python scripts/choose_batch.py                                      # clean MPS batch benchmark (batch 16 kept)
+python -m danc.train.train --config configs/train_v3_ll.yaml        # v3 LL, warm start from v3 HQ
+for a in base ema crm la2 la4 nopmsqe; do python -m danc.train.train --config configs/ablations/abl_$a.yaml; done
+python -m danc.train.train_dual --config configs/train_v3_2mic.yaml --resume
+python -m danc.train.train --config configs/train_v3_hq_cont.yaml   # v3 HQ warm restart
+for m in v3hq v3ll v3_2mic v3hq_cont; do python -m danc.inference.export_onnx --ckpt checkpoints/$m/best.pt --out exports/dancnet_$m.onnx; done
+python -m danc.eval.evaluate --set defence_v1 --systems dancnet:v3hq,dancnet:v3ll,dancnet:v3hq_cont
+python -m danc.eval.evaluate --set defence_v1 --systems dancnet:abl_base,dancnet:abl_ema,dancnet:abl_crm,dancnet:abl_la2,dancnet:abl_la4,dancnet:abl_nopmsqe --save_audio none
+python -m danc.eval.evaluate --set dualmic_v1 --systems dnn:v3hq,hybrid:v3hq,dnn:v3ll,hybrid:v3ll,dnn:v3hq_cont,hybrid:v3hq_cont,dnn2:v3_2mic,dnn2_refdead:v3_2mic
+python -m danc.eval.evaluate --set dualmic_val --systems hybrid:v3hq,dnn2:v3_2mic,hybrid2:v3_2mic   # cascade check on VALIDATION scenes
+python -m danc.eval.evaluate --set dualmic_v1 --systems hybrid2:v3_2mic,hybrid2_refdead:v3_2mic    # cascade, once, after its rule
+python -m danc.eval.evaluate --set vbdemand --systems dancnet:v3hq,dancnet:v3ll,dancnet:v3hq_cont
+python -m danc.eval.evaluate --set dualmic_babble_v1 --systems primary,logmmse,dnn:hqft,hybrid:hqft,dnn:v3hq,hybrid:v3hq,dnn2:v3_2mic,hybrid2:v3_2mic,dnn:v3hq_cont,hybrid:v3hq_cont
+PYTHONPATH=third_party/dfn_pkgs python scripts/run_deepfilternet3.py --set defence_highsnr_v1
+python -m danc.eval.evaluate --set defence_highsnr_v1 --systems noisy,file:dfn3,dancnet:ll,dancnet:hq_metric,dancnet:v3ll,dancnet:v3hq,dancnet:v3hq_cont
+python scripts/transparency_test.py --runs v3hq,v3ll,v3hq_cont
+python scripts/eval_edge.py --systems noisy,logmmse,dancnet:ll,dancnet:hq_metric,dancnet:v3hq,dancnet:v3ll,dancnet:v3hq_cont
+python scripts/eval_edge.py --systems dancnet:abl_base,dancnet:abl_ema,dancnet:abl_crm   # normaliser / output ablation on edge cases
+python scripts/benchmark_latency.py --frames 6000 --models hq,hqft,ll,pilot,v3hq,v3ll,v3_2mic --tag round2   # idle machine
+python scripts/benchmark_latency.py --frames 6000 --models hq,hqft,ll,pilot,v3hq,v3ll,v3hq_cont,v3_2mic --fallback v3hq_cont --tag round2_final
+python scripts/band_error_analysis.py
+python scripts/paired_stats.py &gt; reports/results/paired_stats.md
+python scripts/make_tables.py &gt; reports/results/tables.md
+python scripts/make_figures.py --set defence_v1 --systems noisy,logmmse,file:dfn3,dancnet:ll,dancnet:hq_metric,dancnet:v3hq_cont --runs hq,ll
+python scripts/make_figures.py --set dualmic_v1 --systems primary,nlms,hybrid:hqft,hybrid:v3hq_cont,dnn2:v3_2mic,hybrid2:v3_2mic --runs hq,ll
+python scripts/make_figures_round2.py
+python scripts/make_manifest.py
+python -m pytest -q
+</code></pre>
+<ul>
+<li><strong>Round-2 incidents and fixes, for transparency.</strong></li>
+<li><strong>Two-mic training crash at step ≈ 2 500</strong> (all-silent impulsive-noise window, <code>ValueError</code> in <code>simulate_scene</code>). Fixed: noise redraw plus floor. The run was resumed from its step-2000 checkpoint. The queue log <code>logs/chain2b.out</code> wrongly records "v3_2mic finished" at 17:06, because the process had died. The log itself was left unchanged; the true end state is in <code>logs/v3_2mic.out</code>.</li>
+<li><strong>EMA lost on resume</strong> (found by an independent code review before the resume ran). <code>AveragedModel</code> copies the raw weights on its first update while <code>n_averaged == 0</code>, so a resumed run would have silently replaced its EMA weights by the raw ones. Fixed in both trainers (<code>restore_ema</code>, <code>tests/test_train_resume.py</code>). Two-mic resumes now also save and restore the optimizer state, re-warm the LR when that state is missing (the step-2000 checkpoint predates the fix), and always validate and save at the end of a run.</li>
+<li><strong>Jetson live wrapper would crash after 30 s</strong> (§6.3); fixed and tested.</li>
+<li><strong>First reference-health monitor too naive</strong> (absolute threshold): it would flip networks in a quiet room and miss a dead mic with a DC offset. Redesigned (§4) and covered by regression tests.</li>
+<li><strong>Latency benchmark broken by the bounded timing deque</strong>; fixed (<code>list(eng.timing)</code>), and two-mic and "+fallback" rows were added.</li>
+<li><strong>Batch benchmark run next to training</strong> drove swap to 7.3 GB; it was stopped and re-run clean in the queue.</li>
+<li><strong>High-SNR evaluation first started without DeepFilterNet3 outputs</strong>; stopped before writing results (<code>logs/eval_highsnr_aborted_missing_dfn3.out</code>, empty because it was stopped before its first output line) and re-run after generating them. Its orphaned pool workers were found later by the file-index review and ended.</li>
+<li><code>src/danc/data/build_dual_babble.py</code> received a docstring-only edit (a note that <code>snr_db</code> holds the TIR) after <code>dualmic_babble_v1</code> was built. The generating code is unchanged.</li>
+<li>The resume fixes were tested with a tiny CPU smoke run (<code>configs/smoke/</code>, <code>checkpoints/smoke_dual_resume/</code>, <code>logs/train_smoke_dual_resume.jsonl</code>). These are test artefacts, not models.</li>
+<li><code>reports/figures/round1/</code> holds copies of the round-1 figures. A wildcard copy also put two round-2 latency histograms there; this is documented in that folder's README.</li>
+<li>
+<p>Nothing was deleted. Empty directories <code>src/x</code> and <code>dist/jetson_bundle/src/x</code>, created by an automated helper, were left in place.</p>
+</li>
+<li>
+<p><strong>Deployed models.</strong> <code>exports/DEPLOYMENT.json</code> lists the ONNX files, checkpoints, SHA-256 hashes and the I/O contract. The deployed set is chosen in <code>exports/deployment_selection.json</code> (round 1: <code>exports/DEPLOYMENT_round1.json</code>).</p>
+</li>
+<li><strong>Integrity.</strong> <code>reports/MANIFEST.sha256</code> holds SHA-256 checksums of every project file except <code>.venv</code>, Python caches, <code>.git</code> and <code>third_party/dfn_pkgs</code>; verify with <code>shasum -a 256 -c reports/MANIFEST.sha256</code>.</li>
+<li><strong>Incidents, for transparency.</strong></li>
+<li>The first full training run was stopped at step 1 300 because memory pressure filled the disk with swap. Worker counts were then reduced and noise stored as float16.</li>
+<li>A first v2 run (<code>v2_hq</code>) was restarted after 600 steps with a schedule sized to the measured step time.</li>
+<li>One evaluation race condition lost CSV rows; those systems were re-run and the evaluator now uses a file lock.</li>
+<li>All logs are kept in <code>logs/</code>. <strong>No file was deleted during the project.</strong></li>
+</ul>
+<hr />
+<h2 id="11-references-all-verified-unless-marked">11. References (all verified unless marked)</h2>
+<p>Full verified statements, with URLs and checker comments, are in <code>docs/research/claims_verification.md</code>. Only the most relevant are listed here.</p>
+<ol>
+<li>B. Widrow et al., "Adaptive noise cancelling: Principles and applications," <em>Proc. IEEE</em> 63(12):1692–1716, Dec 1975. [V]</li>
+<li>J.-M. Valin, "A hybrid DSP/deep learning approach to real-time full-band speech enhancement," IEEE MMSP 2018 (arXiv 1709.08243). [V]</li>
+<li>H. Schröter et al., "DeepFilterNet2: Towards real-time speech enhancement on embedded devices for full-band audio," IWAENC 2022 (arXiv 2205.05474, 11 May 2022). [V]</li>
+<li>H. Schröter et al., "DeepFilterNet: Perceptually motivated real-time speech enhancement," Interspeech 2023 show &amp; tell (arXiv 2305.08227, 14 May 2023). [V]</li>
+<li>X. Rong et al., "GTCRN: A speech enhancement model requiring ultralow computational resources," ICASSP 2024, pp. 971–975. [V]</li>
+<li>N. Shetu et al., "Ultra low complexity deep learning based noise suppression," ICASSP 2024, pp. 466–470 (arXiv 2312.08132). [V]</li>
+<li>H. Yan et al., "LiSenNet," ICASSP 2025 (arXiv 2409.13285). [V]</li>
+<li>X. Rong et al., "UL-UNAS," IEEE/ACM TASLP (arXiv 2503.00340, v2 1 Feb 2026). [V]</li>
+<li>S. Zhao et al., "FRCRN," ICASSP 2022, pp. 9281–9285. [V]</li>
+<li>R. Cao et al., "CMGAN," Interspeech 2022; Y.-X. Lu et al., "MP-SENet," Interspeech 2023; R. Chao et al., "SEMamba," IEEE SLT 2024. [V]</li>
+<li>Martins Gomes &amp; Capman (Thales SIX GTS), "BASENet," arXiv 2606.12662, Jun 2026 (preprint). [V]</li>
+<li>Rika, Sapir, Gus (Ceva), "DPDFNet," Speech Communication 2026 (arXiv 2512.16420 v3). [V]</li>
+<li>K. Tan &amp; D. Wang, "A convolutional recurrent neural network for real-time speech enhancement," Interspeech 2018, pp. 3229–3233. [V]</li>
+<li>K. Tan &amp; D. Wang, "Learning complex spectral mapping with gated convolutional recurrent networks," IEEE/ACM TASLP 28:380–390, 2020. [V]</li>
+<li>K. Tan, X. Zhang, D. Wang, "Deep learning based real-time speech enhancement for dual-microphone mobile phones," IEEE/ACM TASLP 29:1853–1863, 2021. [V]</li>
+<li>Y. Xu et al., "Multi-objective learning and mask-based post-processing for DNN based speech enhancement," Interspeech 2015. [V]</li>
+<li>D. Mukhutdinov et al., "Deep learning models for single-channel speech enhancement on drones," IEEE Access 11:22993–23007, 2023. [V]</li>
+<li>M. Haubner, A. Brendel, W. Kellermann, "End-to-end deep learning-based adaptation control for frequency-domain adaptive system identification," ICASSP 2022. [V]</li>
+<li>D. Yang et al., "Low-complexity acoustic echo cancellation with neural Kalman filtering," ICASSP 2023 (arXiv 2207.11388). [V]</li>
+<li>H. Zhang &amp; D. Wang, "Deep ANC: A deep learning approach to active noise control," <em>Neural Networks</em> 141:1–10, 2021. [V]</li>
+<li>Yuan et al., "Active noise cancellation on open-ear smart glasses," arXiv 2604.05519, 2026 (preprint). [V]</li>
+<li>J. Le Roux et al., "SDR – half-baked or well done?," ICASSP 2019, pp. 626–630. [V]</li>
+<li>C. Taal et al., STOI, IEEE TASLP 19(7), 2011; J. Jensen &amp; C. Taal, ESTOI, IEEE/ACM TASLP 24(11), 2016. [V]</li>
+<li>ITU-T P.862 (2001) and P.862.2 (2005/2007), PESQ; marked out of date in 2024 in favour of P.863. [V]</li>
+<li>J. M. Martín-Doñas et al., "A deep learning loss function based on the perceptual evaluation of the speech quality," IEEE SPL 25(11):1680–1684, 2018. [V]</li>
+<li>S. Braun &amp; I. Tashev, "A consolidated view of loss functions for supervised deep learning-based speech enhancement," TSP 2021 (arXiv 2009.12286). [V]</li>
+<li>S.-W. Fu et al., "MetricGAN+," Interspeech 2021, pp. 201–205. [V]</li>
+<li>C. K. A. Reddy et al., "ICASSP 2021 Deep Noise Suppression Challenge," ICASSP 2021 (40 ms real-time rule). [V]</li>
+<li>R. Cutler et al., "ICASSP 2023 Acoustic Echo Cancellation Challenge," arXiv 2309.12553. [V]</li>
+<li>ITU-T G.114 (05/2003), "One-way transmission time." [V]</li>
+<li>NVIDIA: Jetson Orin product page; Jetson Linux r36.4 Developer Guide (power modes); TensorRT 10.x "Working with Loops"; TensorRT "Working with DLA"; TensorRT-RTX optimisation guide; JetPack 7.2 release page (2 Jun 2026). Accessed 2026-10-03. [V]</li>
+<li>ONNX Runtime documentation, "Quantize ONNX models." [V]</li>
+<li>M. Rusci et al., "Accelerating RNN-based speech enhancement on a multi-core MCU with mixed FP16-INT8 post-training quantization," ITEM @ ECML-PKDD 2022. [V]</li>
+<li>I. Fedorov et al., "TinyLSTMs," Interspeech 2020. [V]</li>
+<li>Kealey et al., "Real-time audio video enhancement with a microphone array and headphones," arXiv 2303.00949, 2023. [V]</li>
+<li>R. C. Maher, "Acoustical characterization of gunshots," IEEE SAFE 2007, pp. 109–113. [V]</li>
+<li>D. K. Meinke et al., "Prevention of noise-induced hearing loss from recreational firearms," <em>Seminars in Hearing</em> 38(4):267–281, 2017. [V]</li>
+<li>F. G. Friedlander, <em>Proc. R. Soc. Lond. A</em> 186:322–344, 1946 (Friedlander waveform, as conventionally attributed). [V, corrected]</li>
+<li>US Patent 5,310,137, "Helicopter active noise control system," 1994. [V]</li>
+<li>C. M. Nelke &amp; P. Vary, "Measurement, analysis and simulation of wind noise signals for mobile communication devices," IWAENC 2014. [V]</li>
+<li>J. Hauret et al., "Vibravox," arXiv 2407.11828 (CC BY 4.0). [V]</li>
+<li>MIL-STD-1474E (15 Apr 2015); MIL-STD-1472H (15 Sep 2020). [V]</li>
+<li>RFC 8130 (2017), MELPe RTP payload; NATO STANAG 4591. [V]</li>
+<li>V. Narain, R. Kant, B. P. Singh, "Artificial intelligence driven advances in noise cancellation: a comprehensive review on overcoming noise hazards in military operations," <em>Def. Sci. J.</em> 76(3):408–417, May 2026. [V]. Note: its "14–16 dB SNR gains" come from acoustic-ANC papers, and its "PESQ improvements exceeding 7 %" is a relative VB-D gain; neither is a defence-noise speech-enhancement output SNR [N].</li>
+<li>R. K. Jaiswal et al., "Single-channel speech enhancement using implicit Wiener filter," <em>Int. J. Speech Technol.</em> 25(3):745–758, 2022. [V]</li>
+<li>J. Timmermann, F. Ernst, D. Sachau, "Speech enhancement for helicopter headsets," POMA 52, 2023 (its PESQ figures could only be traced through ref. 44). [V, partial]</li>
+<li>C. Valentini-Botinhao, VoiceBank+DEMAND, Edinburgh DataShare 10283/2791 (CC BY 4.0). V. Panayotov et al., LibriSpeech (CC BY 4.0). K. Piczak, ESC-50 (CC BY-NC 3.0). A. Varga &amp; H. Steeneken, NOISEX-92 (<em>Speech Communication</em> 12(3), 1993). S. Al-Emadi et al., DroneAudioDataset (no licence). [V]</li>
+<li>R. Scheibler et al., "Pyroomacoustics," ICASSP 2018 [N]; E. A. P. Habets &amp; S. Gannot, "Generating sensor signals in isotropic noise fields," JASA 2007 [N].</li>
+</ol></article>
+<div class="foot">Source: reports/REPORT.md in the project folder · tables generated by scripts/make_tables.py · per-file results in reports/results/ ·
+claim verification in docs/research/claims_verification.md · file checksums in reports/MANIFEST.sha256</div>
+</main></div>

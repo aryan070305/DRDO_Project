@@ -1,0 +1,15 @@
+{"type":"launched"}
+{"type":"started","key":"v2:454f7b4600ce12c44773c75e2fa9b26f7de55c14ff661d8935347d033d47ee1a","agentId":"abe2f86e887ab7147","label":"research:T1_architectures","phase":"Research"}
+{"type":"started","key":"v2:1662465516f23a876feaf933ff9452b6e16fb6f26ac1d32c4828fdee02b1cd89","agentId":"add769965a5a5b1a2","label":"research:T2_datasets","phase":"Research"}
+{"type":"started","key":"v2:9dc761b7ef7af7487f25b1969f57db1858a37dddda81cb798570f7f58f1868fb","agentId":"a4230e59eda7f2589","label":"research:T3_impulsive_nonstationary","phase":"Research"}
+{"type":"started","key":"v2:5c231b13cbf015e36b128819075e9b4c8af809e6d59725b1ed66781863ca40fe","agentId":"a443c7db3c13c791c","label":"research:T4_hybrid_adaptive","phase":"Research"}
+{"type":"started","key":"v2:ddd55ff421929975ec8a5f779c744ede53fe2484c7e71331fdb635383a6b0716","agentId":"aeecabd85ae2b0e6e","label":"research:T5_edge_deployment","phase":"Research"}
+{"type":"started","key":"v2:17e37d19e61efa74b6dbf3843105efa240cae25c88be879ff5f1ba8fa4493ff5","agentId":"a14be4db8db1c702e","label":"research:T6_training_losses_metrics","phase":"Research"}
+{"type":"started","key":"v2:c642710ea6c68fc409674912fd8e557381b68ca64c64161d34df4fe873abac1f","agentId":"a46e2897adfeeb225","label":"research:T7_defence_prior_work","phase":"Research"}
+{"type":"failed","key":"v2:1662465516f23a876feaf933ff9452b6e16fb6f26ac1d32c4828fdee02b1cd89","agentId":"add769965a5a5b1a2"}
+{"type":"failed","key":"v2:454f7b4600ce12c44773c75e2fa9b26f7de55c14ff661d8935347d033d47ee1a","agentId":"abe2f86e887ab7147"}
+{"type":"failed","key":"v2:17e37d19e61efa74b6dbf3843105efa240cae25c88be879ff5f1ba8fa4493ff5","agentId":"a14be4db8db1c702e"}
+{"type":"failed","key":"v2:c642710ea6c68fc409674912fd8e557381b68ca64c64161d34df4fe873abac1f","agentId":"a46e2897adfeeb225"}
+{"type":"failed","key":"v2:ddd55ff421929975ec8a5f779c744ede53fe2484c7e71331fdb635383a6b0716","agentId":"aeecabd85ae2b0e6e"}
+{"type":"failed","key":"v2:5c231b13cbf015e36b128819075e9b4c8af809e6d59725b1ed66781863ca40fe","agentId":"a443c7db3c13c791c"}
+{"type":"failed","key":"v2:9dc761b7ef7af7487f25b1969f57db1858a37dddda81cb798570f7f58f1868fb","agentId":"a4230e59eda7f2589"}

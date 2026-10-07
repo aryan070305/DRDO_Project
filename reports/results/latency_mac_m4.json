@@ -1,0 +1,109 @@
+{
+ "host": "macOS-26.2-arm64-arm-64bit",
+ "processor": "arm",
+ "machine": "arm64",
+ "python": "3.11.15",
+ "frames": 6000,
+ "models": {
+  "hq": {
+   "onnx": "exports/dancnet_hq.onnx",
+   "lookahead": 2,
+   "algorithmic_latency_ms": 40.0,
+   "network_step": {
+    "n": 6000,
+    "mean_ms": 0.41034900241478073,
+    "p50_ms": 0.4305419970478397,
+    "p99_ms": 0.4564584212494083,
+    "p99_9_ms": 0.48556628947701913,
+    "max_ms": 0.7375419954769313,
+    "rtf": 0.04103490024147807,
+    "deadline_misses_gt_10ms": 0
+   },
+   "full_engine_block": {
+    "n": 5800,
+    "mean_ms": 0.5141349919408796,
+    "p50_ms": 0.516624997544568,
+    "p99_ms": 0.5524598315241747,
+    "p99_9_ms": 0.5826880609893165,
+    "max_ms": 0.6162500067148358,
+    "rtf": 0.05141349919408796,
+    "deadline_misses_gt_10ms": 0
+   }
+  },
+  "hqft": {
+   "onnx": "exports/dancnet_hqft.onnx",
+   "lookahead": 2,
+   "algorithmic_latency_ms": 40.0,
+   "network_step": {
+    "n": 6000,
+    "mean_ms": 0.41624473245610716,
+    "p50_ms": 0.4278330015949905,
+    "p99_ms": 0.45104199678462464,
+    "p99_9_ms": 0.46554337298585025,
+    "max_ms": 0.5525840024347417,
+    "rtf": 0.041624473245610714,
+    "deadline_misses_gt_10ms": 0
+   },
+   "full_engine_block": {
+    "n": 5800,
+    "mean_ms": 0.5002754179001605,
+    "p50_ms": 0.5135415012773592,
+    "p99_ms": 0.549755002357415,
+    "p99_9_ms": 0.6128027493687139,
+    "max_ms": 0.7475419988622889,
+    "rtf": 0.05002754179001605,
+    "deadline_misses_gt_10ms": 0
+   }
+  },
+  "ll": {
+   "onnx": "exports/dancnet_ll.onnx",
+   "lookahead": 0,
+   "algorithmic_latency_ms": 20.0,
+   "network_step": {
+    "n": 6000,
+    "mean_ms": 0.42537998353994527,
+    "p50_ms": 0.4295624967198819,
+    "p99_ms": 0.4495000030146912,
+    "p99_9_ms": 0.4540829977559042,
+    "max_ms": 0.4575420025503263,
+    "rtf": 0.04253799835399453,
+    "deadline_misses_gt_10ms": 0
+   },
+   "full_engine_block": {
+    "n": 5800,
+    "mean_ms": 0.508799349844249,
+    "p50_ms": 0.516125001013279,
+    "p99_ms": 0.5551274996105349,
+    "p99_9_ms": 0.6094644274126094,
+    "max_ms": 0.6766250007785857,
+    "rtf": 0.050879934984424904,
+    "deadline_misses_gt_10ms": 0
+   }
+  },
+  "pilot": {
+   "onnx": "exports/dancnet_pilot.onnx",
+   "lookahead": 0,
+   "algorithmic_latency_ms": 20.0,
+   "network_step": {
+    "n": 6000,
+    "mean_ms": 0.2715185167362506,
+    "p50_ms": 0.2740205018199049,
+    "p99_ms": 0.30891767186403746,
+    "p99_9_ms": 0.3180421665383632,
+    "max_ms": 0.436624999565538,
+    "rtf": 0.02715185167362506,
+    "deadline_misses_gt_10ms": 0
+   },
+   "full_engine_block": {
+    "n": 5800,
+    "mean_ms": 0.36969452432270467,
+    "p50_ms": 0.3721249959198758,
+    "p99_ms": 0.4035834188107401,
+    "p99_9_ms": 0.44280025820626223,
+    "max_ms": 0.5123340015416034,
+    "rtf": 0.03696945243227047,
+    "deadline_misses_gt_10ms": 0
+   }
+  }
+ }
+}

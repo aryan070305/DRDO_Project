@@ -1,0 +1,21 @@
+# PESQ-guided (MetricGAN+-style) fine-tuning of the HQ model, anchored by the full D-ANC loss.
+name: hq_metric
+init_ckpt: checkpoints/hq/best.pt
+seed: 31
+segment_s: 3.0
+batch_size: 16
+steps: 2000
+lr_g: 0.00005
+lr_d: 0.0002
+w_adv: 2.0
+ema_decay: 0.998
+workers: 3
+pesq_workers: 4
+val_n: 200
+val_every: 500
+log_every: 50
+speech_manifest: speech_train_v2.json
+loss: {w_spec: 1.0, w_mr: 1.0, w_sisdr: 1.0, w_pmsqe: 1.0, w_asym: 0.5, w_spp: 0.1}
+# robustness augmentation added after the VoiceBank cross-corpus test (darker / band-limited talkers,
+# more clean-only examples to enforce transparency) - report section 8.3
+mix_opts: {p_timbre: 0.3, p_clean_only: 0.08, p_noise_only: 0.02}

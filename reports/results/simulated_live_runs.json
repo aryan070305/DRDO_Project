@@ -1,0 +1,58 @@
+{
+ "0135_impulsive_p00": {
+  "blocks": 590,
+  "mean_ms": 2.1658050898715095,
+  "p50_ms": 2.2720414999639615,
+  "p99_ms": 3.5739365068002376,
+  "max_ms": 3.90437500027474,
+  "rtf": 0.21658050898715095,
+  "deadline_misses": 0,
+  "deadline_misses_paced": 0,
+  "audio_s": 6.0,
+  "algorithmic_latency_ms": 40.0,
+  "lookahead_frames": 2,
+  "note": "HQ deployed model (exports/dancnet_hqft.onnx); latency field corrected after a reporting bug fix"
+ },
+ "0060_nonstationary_m05": {
+  "blocks": 590,
+  "mean_ms": 2.04389017939536,
+  "p50_ms": 2.174187498894753,
+  "p99_ms": 2.9844074988795914,
+  "max_ms": 3.394207997189369,
+  "rtf": 0.204389017939536,
+  "deadline_misses": 0,
+  "deadline_misses_paced": 0,
+  "audio_s": 6.0,
+  "algorithmic_latency_ms": 40.0,
+  "lookahead_frames": 2,
+  "note": "HQ deployed model (exports/dancnet_hqft.onnx); latency field corrected after a reporting bug fix"
+ },
+ "0210_mixed_p05": {
+  "blocks": 590,
+  "mean_ms": 2.1305012034491035,
+  "p50_ms": 2.2504584994749166,
+  "p99_ms": 3.483619510152495,
+  "max_ms": 4.252667000400834,
+  "rtf": 0.21305012034491036,
+  "deadline_misses": 0,
+  "deadline_misses_paced": 0,
+  "audio_s": 6.0,
+  "algorithmic_latency_ms": 40.0,
+  "lookahead_frames": 2,
+  "note": "HQ deployed model (exports/dancnet_hqft.onnx); latency field corrected after a reporting bug fix"
+ },
+ "0015_stationary_p00": {
+  "blocks": 590,
+  "mean_ms": 2.1994100305966056,
+  "p50_ms": 2.3052289980114438,
+  "p99_ms": 3.4954581344209146,
+  "max_ms": 3.650582999398466,
+  "rtf": 0.21994100305966055,
+  "deadline_misses": 0,
+  "deadline_misses_paced": 0,
+  "audio_s": 6.0,
+  "algorithmic_latency_ms": 40.0,
+  "lookahead_frames": 2,
+  "note": "HQ deployed model (exports/dancnet_hqft.onnx); latency field corrected after a reporting bug fix"
+ }
+}

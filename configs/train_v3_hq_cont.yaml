@@ -1,0 +1,26 @@
+# DANCNet-v3 "HQ" warm-restart continuation: v3hq stopped improving only because its cosine LR reached the floor.
+# Same architecture / data recipe; weights (EMA) from v3hq/best.pt; new data seed; 10k steps at peak LR 3e-4.
+# Pre-registered adoption rule: reports/results/v3hq_cont_decision_rule.md
+name: v3hq_cont
+init_ckpt: checkpoints/v3hq/best.pt
+seed: 43
+segment_s: 3.0
+batch_size: 16
+lr: 0.0003
+lr_min: 0.00001
+warmup_steps: 300
+max_steps: 10000
+max_hours: 5.5
+grad_clip: 5.0
+weight_decay: 0.0001
+workers: 4
+val_workers: 3
+log_every: 100
+val_every: 2000
+val_n: 200
+use_synth: true
+speech_manifest: speech_train_v2.json
+ema_decay: 0.999
+mix_opts: {p_timbre: 0.2, p_clean_only: 0.05, p_noise_only: 0.02}
+model: {c: 96, c2: 48, c1: 24, n_dp: 4, df_order: 5, lookahead: 2}
+loss: {w_spec: 1.0, w_mr: 1.0, w_sisdr: 1.0, w_pmsqe: 1.0, w_asym: 0.5, w_spp: 0.1}

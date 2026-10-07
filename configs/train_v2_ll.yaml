@@ -1,0 +1,25 @@
+# v2 "low-latency" DANCNet (20 ms algorithmic latency, no look-ahead), warm-started from the HQ model.
+# Same weights/shapes as HQ (df_order 5) - only the output alignment changes (look-ahead 0), so a short
+# fine-tune at reduced LR re-targets the network instead of training from scratch.
+name: ll
+init_ckpt: checkpoints/hq/best.pt
+seed: 23
+segment_s: 3.0
+batch_size: 16
+lr: 0.0003
+lr_min: 0.00001
+warmup_steps: 200
+max_steps: 5000
+max_hours: 2.0
+grad_clip: 5.0
+weight_decay: 0.0001
+workers: 4
+val_workers: 3
+log_every: 100
+val_every: 1000
+val_n: 200
+use_synth: true
+speech_manifest: speech_train_v2.json
+ema_decay: 0.998
+model: {c: 80, c2: 40, c1: 20, n_dp: 3, df_order: 5, lookahead: 0}
+loss: {w_spec: 1.0, w_mr: 1.0, w_sisdr: 1.0, w_pmsqe: 1.0, w_asym: 0.5, w_spp: 0.1}

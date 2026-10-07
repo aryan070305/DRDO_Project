@@ -1,0 +1,35 @@
+# D-ANC Jetson runtime requirements (NO PyTorch).  Installed by deploy/jetson/install.sh.
+# NOT VERIFIED ON HARDWARE IN THIS PROJECT.
+#
+# Target: JetPack 6.2.x = Ubuntu 22.04, system Python 3.10, aarch64.  Lower bounds only, so pip picks the newest
+# release that still ships a cp310 / aarch64 wheel (checked on pypi.org, 2026-10-04: onnxruntime 1.23.2 is the
+# last CPU release with cp310 aarch64 wheels; 1.24+ need Python >= 3.11; numpy/scipy/pandas likewise resolve
+# to their last 3.10 releases).
+# Versions validated on the Mac (Python 3.11): numpy 2.4.6, scipy 1.17.1, soundfile 0.14.0, sounddevice 0.5.6,
+# soxr 1.1.0, onnxruntime 1.30.0, pyyaml 6.0.3, pandas 3.0.6, pesq 0.0.4, pystoi 0.4.1.
+
+# --- signal processing / audio I/O --------------------------------------------------------------------
+numpy>=1.24
+scipy>=1.10
+soundfile>=0.12        # needs libsndfile1 (apt) on some platforms; the aarch64 wheel bundles it
+sounddevice>=0.4.6     # needs libportaudio2 (apt)
+soxr>=0.3.7
+
+# --- inference: ONNX Runtime, CPU execution provider (the recommended real-time path) -----------------
+onnxruntime>=1.17,<2
+# GPU execution providers (CUDA / TensorRT EP) instead of the CPU wheel - do NOT install both packages:
+#   pip uninstall -y onnxruntime
+#   pip install onnxruntime-gpu --index-url https://pypi.jetson-ai-lab.io/jp6/cu126/+simple/
+# (install.sh --gpu does exactly this; the index listed onnxruntime-gpu 1.24.0 and 1.23.0 cp310 wheels on 2026-10-04.
+#  Use --index-url, not --extra-index-url: PyPI's generic aarch64 onnxruntime-gpu wheels (Python >= 3.11) are not
+#  Jetson builds; the Jetson AI Lab index redirects the packages it does not host to pypi.org.)
+
+# --- configuration / tooling -------------------------------------------------------------------------
+pyyaml>=6.0
+pandas>=2.0
+
+# --- verification metrics (verify_install.py) ----------------------------------------------------------
+# pesq is an sdist only (C extension): needs build-essential + python3-dev and numpy/cython at build time;
+# install.sh installs it with --no-build-isolation after numpy and cython.
+pesq==0.0.4
+pystoi>=0.4

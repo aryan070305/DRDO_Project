@@ -1,0 +1,24 @@
+# DANCNet-v3 "HQ": more capacity (width 96, 4 dual-path blocks), same 40 ms latency as v2-HQ.
+# Robustness augmentation (talker timbre / bandwidth, clean-only 5 %) from the start (lesson of the VoiceBank check).
+name: v3hq
+seed: 41
+segment_s: 3.0
+batch_size: 16
+lr: 0.001
+lr_min: 0.00002
+warmup_steps: 1000
+max_steps: 16000
+max_hours: 8.0
+grad_clip: 5.0
+weight_decay: 0.0001
+workers: 4
+val_workers: 3
+log_every: 100
+val_every: 2000
+val_n: 200
+use_synth: true
+speech_manifest: speech_train_v2.json
+ema_decay: 0.999
+mix_opts: {p_timbre: 0.2, p_clean_only: 0.05, p_noise_only: 0.02}
+model: {c: 96, c2: 48, c1: 24, n_dp: 4, df_order: 5, lookahead: 2}
+loss: {w_spec: 1.0, w_mr: 1.0, w_sisdr: 1.0, w_pmsqe: 1.0, w_asym: 0.5, w_spp: 0.1}

@@ -1,0 +1,24 @@
+# v2 "high-quality" DANCNet run: larger model, 2-frame look-ahead (40 ms algorithmic latency),
+# 2.5x more training speech (97 speakers, 25 h), EMA weights.  Memory-safe worker counts
+# (the first main run exhausted RAM -> swap -> disk on the 16 GB development Mac).
+name: v2_hq
+seed: 11
+segment_s: 4.0
+batch_size: 16
+lr: 0.001
+lr_min: 0.00002
+warmup_steps: 1000
+max_steps: 22000
+max_hours: 6.5
+grad_clip: 5.0
+weight_decay: 0.0001
+workers: 4
+val_workers: 3
+log_every: 100
+val_every: 2000
+val_n: 200
+use_synth: true
+speech_manifest: speech_train_v2.json
+ema_decay: 0.999
+model: {c: 80, c2: 40, c1: 20, n_dp: 3, df_order: 5, lookahead: 2}
+loss: {w_spec: 1.0, w_mr: 1.0, w_sisdr: 1.0, w_pmsqe: 1.0, w_asym: 0.5, w_spp: 0.1}
